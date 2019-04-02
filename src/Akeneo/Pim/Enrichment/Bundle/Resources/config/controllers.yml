@@ -35,7 +35,7 @@ services:
             - '@pim_catalog.query.product_query_builder_search_after_size_factory'
             - '@pim_external_api_serializer'
             - '@pim_api.repository.channel'
-            - '@pim_api.checker.query_parameters_product'
+            - '@akeneo.pim.enrichment.controller.external_api.apply_product_search_query_parameters_to_pqb'
             - '@pim_api.repository.attribute'
             - '@pim_api.repository.product'
             - '@pim_api.pagination.offset_hal_paginator'
@@ -55,6 +55,11 @@ services:
             - '@pim_api.filter.product_attribute_filter'
             - '@pim_catalog.entity_with_family_variant.add_parent_to_product'
             - '%pim_api.configuration%'
+
+    akeneo.pim.enrichment.controller.external_api.apply_product_search_query_parameters_to_pqb:
+        class: 'Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ApplyProductSearchQueryParametersToPQB'
+        arguments:
+            - '@pim_api.checker.query_parameters_product'
 
     pim_api.controller.product_model:
         class: 'Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ProductModelController'

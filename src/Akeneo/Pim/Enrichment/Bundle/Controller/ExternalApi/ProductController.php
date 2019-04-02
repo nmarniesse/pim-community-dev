@@ -123,37 +123,12 @@ class ProductController
 
     /** @var AttributeFilterInterface */
     protected $productAttributeFilter;
-
-    /**
-     * @param ProductQueryBuilderFactoryInterface   $searchAfterPqbFactory
-     * @param NormalizerInterface                   $normalizer
-     * @param IdentifiableObjectRepositoryInterface $channelRepository
-     * @param QueryParametersCheckerInterface       $queryParametersChecker
-     * @param AttributeRepositoryInterface          $attributeRepository
-     * @param IdentifiableObjectRepositoryInterface $productRepository
-     * @param PaginatorInterface                    $offsetPaginator
-     * @param PaginatorInterface                    $searchAfterPaginator
-     * @param ParameterValidatorInterface           $parameterValidator
-     * @param ValidatorInterface                    $productValidator
-     * @param ProductBuilderInterface               $productBuilder
-     * @param RemoverInterface                      $remover
-     * @param ObjectUpdaterInterface                $updater
-     * @param SaverInterface                        $saver
-     * @param UrlGeneratorInterface                 $router
-     * @param FilterInterface                       $emptyValuesFilter
-     * @param StreamResourceResponse                $partialUpdateStreamResource
-     * @param PrimaryKeyEncrypter                   $primaryKeyEncrypter
-     * @param ProductQueryBuilderFactoryInterface   $fromSizePqbFactory
-     * @param ProductBuilderInterface               $variantProductBuilder
-     * @param AttributeFilterInterface              $productAttributeFilter
-     * @param AddParent                             $addParent
-     * @param array                                 $apiConfiguration
-     */
+    
     public function __construct(
         ProductQueryBuilderFactoryInterface $searchAfterPqbFactory,
         NormalizerInterface $normalizer,
         IdentifiableObjectRepositoryInterface $channelRepository,
-        QueryParametersCheckerInterface $queryParametersChecker,
+        ApplyProductSearchQueryParametersToPQB $applyProductSearchQueryParametersToPQB,
         AttributeRepositoryInterface $attributeRepository,
         IdentifiableObjectRepositoryInterface $productRepository,
         PaginatorInterface $offsetPaginator,
@@ -177,7 +152,7 @@ class ProductController
         $this->searchAfterPqbFactory = $searchAfterPqbFactory;
         $this->normalizer = $normalizer;
         $this->channelRepository = $channelRepository;
-        $this->queryParametersChecker = $queryParametersChecker;
+        $this->queryParametersChecker = $applyProductSearchQueryParametersToPQB;
         $this->attributeRepository = $attributeRepository;
         $this->productRepository = $productRepository;
         $this->offsetPaginator = $offsetPaginator;
@@ -683,7 +658,7 @@ class ProductController
         $pqb = $this->fromSizePqbFactory->create(['limit' => (int) $queryParameters['limit'], 'from' => (int) $from]);
 
         try {
-            $this->setPQBFilters($pqb, $request, $channel);
+            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request, $channel);
         } catch (
         UnsupportedFilterException
         | PropertyException
@@ -759,7 +734,7 @@ class ProductController
         $pqb = $this->searchAfterPqbFactory->create($pqbOptions);
 
         try {
-            $this->setPQBFilters($pqb, $request, $channel);
+            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request, $channel);
         } catch (
         UnsupportedFilterException
         | PropertyException
