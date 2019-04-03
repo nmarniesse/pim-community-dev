@@ -8,6 +8,7 @@ use Akeneo\Channel\Component\Model\ChannelInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderInterface;
 use Akeneo\Tool\Bundle\ApiBundle\Checker\QueryParametersCheckerInterface;
+use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -20,27 +21,29 @@ final class ApplyProductSearchQueryParametersToPQB
     /** @var QueryParametersCheckerInterface */
     private $queryParametersChecker;
 
-    public function __construct(QueryParametersCheckerInterface $queryParametersChecker)
-    {
+    /** @var IdentifiableObjectRepositoryInterface */
+    private $channelRepository;
+
+    public function __construct(
+        QueryParametersCheckerInterface $queryParametersChecker,
+        IdentifiableObjectRepositoryInterface $channelRepository
+    ) {
         $this->queryParametersChecker = $queryParametersChecker;
+        $this->channelRepository = $channelRepository;
     }
 
     /**
      * Set the PQB filters.
      * If a scope is requested, add a filter to return only products linked to its category tree
      *
-     * TODO: remove channel and get it from repository
-     *
      * @param ProductQueryBuilderInterface $pqb
      * @param Request                      $request
-     * @param ChannelInterface|null        $channel
      *
      * @throws UnprocessableEntityHttpException
      */
     public function apply(
         ProductQueryBuilderInterface $pqb,
-        Request $request,
-        ?ChannelInterface $channel
+        Request $request
     ): void {
         $searchParameters = [];
 
@@ -53,13 +56,16 @@ final class ApplyProductSearchQueryParametersToPQB
             }
         }
 
-        if (null !== $channel && !isset($searchParameters['categories'])) {
-            $searchParameters['categories'] = [
-                [
-                    'operator' => Operators::IN_CHILDREN_LIST,
-                    'value'    => [$channel->getCategory()->getCode()]
-                ]
-            ];
+        if (!isset($searchParameters['categories'])) {
+            $channel = $this->channelRepository->findOneByIdentifier($request->get('scope', null));
+            if (null !== $channel) {
+                $searchParameters['categories'] = [
+                    [
+                        'operator' => Operators::IN_CHILDREN_LIST,
+                        'value'    => [$channel->getCategory()->getCode()]
+                    ]
+                ];
+            }
         }
 
         foreach ($searchParameters as $propertyCode => $filters) {

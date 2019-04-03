@@ -62,6 +62,7 @@ services:
         class: 'Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ApplyProductSearchQueryParametersToPQB'
         arguments:
             - '@pim_api.checker.query_parameters_product'
+            - '@pim_catalog.repository.cached_channel'
 
     pim_api.controller.product_model:
         class: 'Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ProductModelController'

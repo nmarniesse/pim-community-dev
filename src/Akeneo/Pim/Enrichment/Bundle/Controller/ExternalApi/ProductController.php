@@ -567,13 +567,11 @@ class ProductController
         array $queryParameters,
         array $normalizerOptions
     ): array {
-        $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
-
         $from = isset($queryParameters['page']) ? ($queryParameters['page'] - 1) * $queryParameters['limit'] : 0;
         $pqb = $this->fromSizePqbFactory->create(['limit' => (int) $queryParameters['limit'], 'from' => (int) $from]);
 
         try {
-            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request, $channel);
+            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request);
         } catch (
         UnsupportedFilterException
         | PropertyException
@@ -636,8 +634,6 @@ class ProductController
         array $queryParameters,
         array $normalizerOptions
     ): array {
-        $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
-
         $pqbOptions = ['limit' => (int) $queryParameters['limit']];
         $searchParameterCrypted = null;
         if (isset($queryParameters['search_after'])) {
@@ -649,7 +645,7 @@ class ProductController
         $pqb = $this->searchAfterPqbFactory->create($pqbOptions);
 
         try {
-            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request, $channel);
+            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request);
         } catch (
         UnsupportedFilterException
         | PropertyException
