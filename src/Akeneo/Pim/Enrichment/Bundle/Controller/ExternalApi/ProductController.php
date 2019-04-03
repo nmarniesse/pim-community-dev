@@ -195,7 +195,7 @@ class ProductController
     public function listAction(Request $request): JsonResponse
     {
         try {
-            $this->parameterValidator->validate($request->query->all(), ['support_search_after' => true]);
+            $this->productParameterValidator->validate($request->query->all(), ['support_search_after' => true]);
         } catch (PaginationParametersException $e) {
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
@@ -203,11 +203,6 @@ class ProductController
         $channel = null;
         if ($request->query->has('scope')) {
             $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope'));
-            if (null === $channel) {
-                throw new UnprocessableEntityHttpException(
-                    sprintf('Scope "%s" does not exist.', $request->query->get('scope'))
-                );
-            }
         }
 
         $normalizerOptions = $this->getNormalizerOptions($request, $channel);
