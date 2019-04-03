@@ -200,9 +200,8 @@ class ProductController
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
 
-        $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
 
-        $normalizerOptions = $this->getNormalizerOptions($request, $channel);
+        $normalizerOptions = $this->getNormalizerOptions($request);
         $defaultParameters = [
             'pagination_type' => PaginationTypes::OFFSET,
             'limit'           => $this->apiConfiguration['pagination']['limit_by_default'],
@@ -484,17 +483,13 @@ class ProductController
         return $response;
     }
 
-    /**
-     * @param Request               $request
-     * @param ChannelInterface|null $channel
-     *
-     * @return array
-     */
-    protected function getNormalizerOptions(Request $request, ?ChannelInterface $channel): array
+    protected function getNormalizerOptions(Request $request): array
     {
         $normalizerOptions = [];
 
         if ($request->query->has('scope')) {
+            $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
+
             $normalizerOptions['channels'] = [$channel->getCode()];
             $normalizerOptions['locales'] = $channel->getLocaleCodes();
         }
@@ -504,9 +499,6 @@ class ProductController
         }
 
         if ($request->query->has('attributes')) {
-            $attributes = explode(',', $request->query->get('attributes'));
-            $this->queryParametersChecker->checkAttributesParameters($attributes);
-
             $normalizerOptions['attributes'] = explode(',', $request->query->get('attributes'));
         }
 
