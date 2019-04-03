@@ -10,7 +10,7 @@ namespace Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase;
  */
 final class GetListOfProductsQueryHandler
 {
-    public function __invoke(GetListOfProductsQuery $query): 
+    public function handle(GetListOfProductsQuery $query): array
     {
 
     }

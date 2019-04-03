@@ -112,6 +112,9 @@ class ProductController
     /** @var QueryParametersCheckerInterface */
     protected $queryParametersChecker;
 
+    /** @var ApplyProductSearchQueryParametersToPQB */
+    protected $applyProductSearchQueryParametersToPQB;
+
     /** @var ProductQueryBuilderFactoryInterface */
     protected $fromSizePqbFactory;
 
@@ -123,12 +126,13 @@ class ProductController
 
     /** @var AttributeFilterInterface */
     protected $productAttributeFilter;
-    
+
     public function __construct(
         ProductQueryBuilderFactoryInterface $searchAfterPqbFactory,
         NormalizerInterface $normalizer,
         IdentifiableObjectRepositoryInterface $channelRepository,
         ApplyProductSearchQueryParametersToPQB $applyProductSearchQueryParametersToPQB,
+        QueryParametersCheckerInterface $queryParametersChecker,
         AttributeRepositoryInterface $attributeRepository,
         IdentifiableObjectRepositoryInterface $productRepository,
         PaginatorInterface $offsetPaginator,
@@ -152,7 +156,8 @@ class ProductController
         $this->searchAfterPqbFactory = $searchAfterPqbFactory;
         $this->normalizer = $normalizer;
         $this->channelRepository = $channelRepository;
-        $this->queryParametersChecker = $applyProductSearchQueryParametersToPQB;
+        $this->applyProductSearchQueryParametersToPQB = $applyProductSearchQueryParametersToPQB;
+        $this->queryParametersChecker = $queryParametersChecker;
         $this->attributeRepository = $attributeRepository;
         $this->productRepository = $productRepository;
         $this->offsetPaginator = $offsetPaginator;
@@ -479,83 +484,6 @@ class ProductController
         $response->headers->set('Location', $route);
 
         return $response;
-    }
-
-    /**
-     * Set the PQB filters.
-     * If a scope is requested, add a filter to return only products linked to its category tree
-     *
-     * @param ProductQueryBuilderInterface $pqb
-     * @param Request                      $request
-     * @param ChannelInterface|null        $channel
-     *
-     * @throws UnprocessableEntityHttpException
-     */
-    protected function setPQBFilters(
-        ProductQueryBuilderInterface $pqb,
-        Request $request,
-        ?ChannelInterface $channel
-    ): void {
-        $searchParameters = [];
-
-        if ($request->query->has('search')) {
-            $searchString = $request->query->get('search', '');
-            $searchParameters = $this->queryParametersChecker->checkCriterionParameters($searchString);
-
-            if (isset($searchParameters['categories'])) {
-                $this->queryParametersChecker->checkCategoriesParameters($searchParameters['categories']);
-            }
-        }
-
-        if (null !== $channel && !isset($searchParameters['categories'])) {
-            $searchParameters['categories'] = [
-                [
-                    'operator' => Operators::IN_CHILDREN_LIST,
-                    'value'    => [$channel->getCategory()->getCode()]
-                ]
-            ];
-        }
-
-        foreach ($searchParameters as $propertyCode => $filters) {
-            foreach ($filters as $filter) {
-                $searchLocale = $request->query->get('search_locale');
-                $context['locale'] = isset($filter['locale']) ? $filter['locale'] : $searchLocale;
-
-                if (null !== $context['locale'] && is_string($context['locale'])) {
-                    $locales = explode(',', $context['locale']);
-                    $this->queryParametersChecker->checkLocalesParameters($locales);
-                }
-
-                $context['scope'] = isset($filter['scope']) ? $filter['scope'] : $request->query->get('search_scope');
-
-                if (isset($filter['locales']) && '' !== $filter['locales']) {
-                    $context['locales'] = $filter['locales'];
-
-                    $this->queryParametersChecker->checkLocalesParameters(
-                        !is_array($context['locales']) ? [$context['locales']] : $context['locales']
-                    );
-                }
-
-                $value = isset($filter['value']) ? $filter['value'] : null;
-
-                if (in_array($propertyCode, ['created', 'updated'])) {
-                    if (Operators::BETWEEN === $filter['operator'] && is_array($value)) {
-                        $values = [];
-                        foreach ($value as $date) {
-                            $values[] = \DateTime::createFromFormat('Y-m-d H:i:s', $date);
-                        }
-                        $value = $values;
-                    } elseif (!in_array($filter['operator'], [Operators::SINCE_LAST_N_DAYS, Operators::SINCE_LAST_JOB])) {
-                        //PIM-7541 Create the date with the server timezone configuration. Do not force it to UTC timezone.
-                        $value = \DateTime::createFromFormat('Y-m-d H:i:s', $value);
-                    }
-                }
-
-                $this->queryParametersChecker->checkPropertyParameters($propertyCode, $filter['operator']);
-
-                $pqb->addFilter($propertyCode, $filter['operator'], $value, $context);
-            }
-        }
     }
 
     /**

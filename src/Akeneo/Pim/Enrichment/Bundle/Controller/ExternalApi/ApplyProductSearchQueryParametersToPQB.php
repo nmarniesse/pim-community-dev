@@ -20,6 +20,11 @@ final class ApplyProductSearchQueryParametersToPQB
     /** @var QueryParametersCheckerInterface */
     private $queryParametersChecker;
 
+    public function __construct(QueryParametersCheckerInterface $queryParametersChecker)
+    {
+        $this->queryParametersChecker = $queryParametersChecker;
+    }
+
     /**
      * Set the PQB filters.
      * If a scope is requested, add a filter to return only products linked to its category tree
@@ -30,7 +35,7 @@ final class ApplyProductSearchQueryParametersToPQB
      *
      * @throws UnprocessableEntityHttpException
      */
-    protected function apply(
+    public function apply(
         ProductQueryBuilderInterface $pqb,
         Request $request,
         ?ChannelInterface $channel
