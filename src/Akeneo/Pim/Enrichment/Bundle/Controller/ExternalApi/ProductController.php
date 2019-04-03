@@ -661,15 +661,8 @@ class ProductController
         }
 
         $pqb->addSorter('id', Directions::ASCENDING);
-        $productCursor = $pqb->execute();
-
-        $products = [];
-        foreach ($productCursor as $product) {
-            $products[] = $product;
-        }
-
+        $products = iterator_to_array($pqb->execute());
         $lastProduct = end($products);
-        reset($products);
 
         $parameters = [
             'query_parameters'    => $queryParameters,
