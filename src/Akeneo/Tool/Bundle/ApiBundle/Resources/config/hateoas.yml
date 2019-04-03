@@ -13,6 +13,7 @@ services:
         class: 'Akeneo\Tool\Component\Api\Pagination\ProductParameterValidator'
         arguments:
             - '@pim_catalog.repository.cached_channel'
+            - '@pim_api.pagination.parameter_validator'
 
     pim_api.pagination.offset_hal_paginator:
         class: '%pim_api.pagination.offset_hal_paginator.class%'

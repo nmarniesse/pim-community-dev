@@ -27,6 +27,7 @@ use Akeneo\Tool\Component\Api\Exception\ViolationHttpException;
 use Akeneo\Tool\Component\Api\Pagination\PaginationTypes;
 use Akeneo\Tool\Component\Api\Pagination\PaginatorInterface;
 use Akeneo\Tool\Component\Api\Pagination\ParameterValidatorInterface;
+use Akeneo\Tool\Component\Api\Pagination\ProductParameterValidator;
 use Akeneo\Tool\Component\Api\Security\PrimaryKeyEncrypter;
 use Akeneo\Tool\Component\StorageUtils\Exception\PropertyException;
 use Akeneo\Tool\Component\StorageUtils\Exception\UnknownPropertyException;
@@ -127,7 +128,11 @@ class ProductController
     /** @var AttributeFilterInterface */
     protected $productAttributeFilter;
 
+    /** @var ProductParameterValidator */
+    private $productParameterValidator;
+
     public function __construct(
+        ProductParameterValidator $productParameterValidator,
         ProductQueryBuilderFactoryInterface $searchAfterPqbFactory,
         NormalizerInterface $normalizer,
         IdentifiableObjectRepositoryInterface $channelRepository,
@@ -153,6 +158,7 @@ class ProductController
         AddParent $addParent,
         array $apiConfiguration
     ) {
+        $this->productParameterValidator = $productParameterValidator;
         $this->searchAfterPqbFactory = $searchAfterPqbFactory;
         $this->normalizer = $normalizer;
         $this->channelRepository = $channelRepository;
