@@ -8,6 +8,12 @@ services:
         arguments:
             - '%pim_api.configuration%'
 
+    # TODO: to move
+    pim_api.product.query_parameters_validator:
+        class: 'Akeneo\Tool\Component\Api\Pagination\ProductParameterValidator'
+        arguments:
+            - '@pim_catalog.repository.cached_channel'
+
     pim_api.pagination.offset_hal_paginator:
         class: '%pim_api.pagination.offset_hal_paginator.class%'
         arguments:
