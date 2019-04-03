@@ -7,6 +7,8 @@ namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
 use Akeneo\Channel\Component\Model\ChannelInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Builder\ProductBuilderInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\AddParent;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\InvalidOperatorException;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\ObjectNotFoundException;
@@ -200,6 +202,34 @@ class ProductController
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
 
+        $query = new GetListOfProductsQuery();
+        if ($request->query->has('attributes')) {
+            $query->attributes = explode(',', $request->query->get('attributes'));
+        }
+
+        if ($request->query->has('scope')) {
+            $query->channel = $request->query->get('scope');
+        }
+
+        if ($request->query->has('locales')) {
+            $query->locales = explode(',', $request->query->get('locales'));
+        }
+
+        if ($request->query->has('search')) {
+            $query->search = json_decode($request->query->get('search'), true);
+        }
+
+        $query->withCount = $request->query->get('with_count', false);
+
+        /*
+        $validator = new GetListOfProductsQueryValidator();
+        $validator->validate($query);
+
+        $handler = new GetListOfProductsQueryHandler();
+        $products = $handler->handle($query);
+
+        return array_map($normalize, $products);
+        */
 
         $normalizerOptions = $this->getNormalizerOptions($request);
         $defaultParameters = [
@@ -582,10 +612,10 @@ class ProductController
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
 
-        $queryParameters = array_merge(['page' => 1, 'with_count' => 'false'], $queryParameters);
         $pqb->addSorter('id', Directions::ASCENDING);
-
         $products = $pqb->execute();
+
+        $queryParameters = array_merge(['page' => 1, 'with_count' => 'false'], $queryParameters);
 
         $paginationParameters = [
             'query_parameters'    => $queryParameters,
