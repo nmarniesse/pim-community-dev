@@ -77,4 +77,21 @@ class ProductParameterValidatorSpec extends ObjectBehavior
         $this->validate(['locales' => 'en_US,fr_FR', 'scope' => 'ecommerce'],[]);
     }
 
+    public function it_does_not_validate_locales_if_locales_are_not_provided(QueryParametersCheckerInterface $queryParametersChecker)
+    {
+        $queryParametersChecker->checkLocalesParameters(Argument::cetera())->shouldNotBeCalled();
+        $this->validate([],[]);
+    }
+
+    public function it_validates_that_attributes_exist(QueryParametersCheckerInterface $queryParametersChecker)
+    {
+        $queryParametersChecker->checkAttributesParameters(['color', 'name'])->shouldBeCalled();
+        $this->validate(['attributes' => 'color,name'], []);
+    }
+
+    public function it_does_not_validate_attributes_if_attributes_are_not_provided(QueryParametersCheckerInterface $queryParametersChecker)
+    {
+        $queryParametersChecker->checkAttributesParameters(Argument::cetera())->shouldNotBeCalled();
+        $this->validate([],[]);
+    }
 }

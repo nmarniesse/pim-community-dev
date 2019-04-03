@@ -54,5 +54,10 @@ class ProductParameterValidator implements ParameterValidatorInterface
             $locales = explode(',', $parameters['locales']);
             $this->queryParametersChecker->checkLocalesParameters($locales, $channel);
         }
+
+        if (isset($parameters['attributes'])) {
+            $attributes = explode(',', $parameters['attributes']);
+            $this->queryParametersChecker->checkAttributesParameters($attributes);
+        }
     }
 }
