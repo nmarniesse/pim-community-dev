@@ -500,9 +500,6 @@ class ProductController
         }
 
         if ($request->query->has('locales')) {
-            $locales = explode(',', $request->query->get('locales'));
-            $this->queryParametersChecker->checkLocalesParameters($locales, $channel);
-
             $normalizerOptions['locales'] = explode(',', $request->query->get('locales'));
         }
 
