@@ -200,10 +200,7 @@ class ProductController
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
 
-        $channel = null;
-        if ($request->query->has('scope')) {
-            $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope'));
-        }
+        $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
 
         $normalizerOptions = $this->getNormalizerOptions($request, $channel);
         $defaultParameters = [
@@ -214,8 +211,8 @@ class ProductController
         $queryParameters = array_merge($defaultParameters, $request->query->all());
 
         $paginatedProducts = PaginationTypes::OFFSET === $queryParameters['pagination_type'] ?
-            $this->searchAfterOffset($request, $channel, $queryParameters, $normalizerOptions) :
-            $this->searchAfterIdentifier($request, $channel, $queryParameters, $normalizerOptions);
+            $this->searchAfterOffset($request, $queryParameters, $normalizerOptions) :
+            $this->searchAfterIdentifier($request, $queryParameters, $normalizerOptions);
 
         return new JsonResponse($paginatedProducts);
     }
@@ -569,7 +566,6 @@ class ProductController
 
     /**
      * @param Request               $request
-     * @param null|ChannelInterface $channel
      * @param array                 $queryParameters
      * @param array                 $normalizerOptions
      *
@@ -579,10 +575,11 @@ class ProductController
      */
     protected function searchAfterOffset(
         Request $request,
-        ?ChannelInterface $channel,
         array $queryParameters,
         array $normalizerOptions
     ): array {
+        $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
+
         $from = isset($queryParameters['page']) ? ($queryParameters['page'] - 1) * $queryParameters['limit'] : 0;
         $pqb = $this->fromSizePqbFactory->create(['limit' => (int) $queryParameters['limit'], 'from' => (int) $from]);
 
@@ -636,7 +633,6 @@ class ProductController
 
     /**
      * @param Request               $request
-     * @param null|ChannelInterface $channel
      * @param array                 $queryParameters
      * @param array                 $normalizerOptions
      *
@@ -648,10 +644,11 @@ class ProductController
      */
     protected function searchAfterIdentifier(
         Request $request,
-        ?ChannelInterface $channel,
         array $queryParameters,
         array $normalizerOptions
     ): array {
+        $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
+
         $pqbOptions = ['limit' => (int) $queryParameters['limit']];
         $searchParameterCrypted = null;
         if (isset($queryParameters['search_after'])) {

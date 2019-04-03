@@ -29,6 +29,8 @@ final class ApplyProductSearchQueryParametersToPQB
      * Set the PQB filters.
      * If a scope is requested, add a filter to return only products linked to its category tree
      *
+     * TODO: remove channel and get it from repository
+     *
      * @param ProductQueryBuilderInterface $pqb
      * @param Request                      $request
      * @param ChannelInterface|null        $channel
