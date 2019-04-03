@@ -2,6 +2,7 @@
 
 namespace Akeneo\Tool\Component\Api\Pagination;
 
+use Akeneo\Tool\Bundle\ApiBundle\Checker\QueryParametersCheckerInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -19,12 +20,17 @@ class ProductParameterValidator implements ParameterValidatorInterface
     /** @var PaginationParameterValidator */
     private $paginationParametersValidator;
 
+    /** @var QueryParametersCheckerInterface */
+    private $queryParametersChecker;
+
     public function __construct(
         IdentifiableObjectRepositoryInterface $channelRepository,
-        PaginationParameterValidator $paginationParametersValidator
+        PaginationParameterValidator $paginationParametersValidator,
+        QueryParametersCheckerInterface $queryParametersChecker
     ) {
         $this->channelRepository = $channelRepository;
         $this->paginationParametersValidator = $paginationParametersValidator;
+        $this->queryParametersChecker = $queryParametersChecker;
     }
 
     /**
@@ -42,6 +48,11 @@ class ProductParameterValidator implements ParameterValidatorInterface
                     sprintf('Scope "%s" does not exist.', $parameters['scope'])
                 );
             }
+        }
+
+        if (isset($parameters['locales'])) {
+            $locales = explode(',', $parameters['locales']);
+            $this->queryParametersChecker->checkLocalesParameters($locales, $channel);
         }
     }
 }
