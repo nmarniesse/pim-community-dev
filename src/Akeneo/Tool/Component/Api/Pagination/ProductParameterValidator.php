@@ -16,9 +16,15 @@ class ProductParameterValidator implements ParameterValidatorInterface
     /** @var IdentifiableObjectRepositoryInterface */
     private $channelRepository;
 
-    public function __construct(IdentifiableObjectRepositoryInterface $channelRepository)
-    {
+    /** @var PaginationParameterValidator */
+    private $paginationParametersValidator;
+
+    public function __construct(
+        IdentifiableObjectRepositoryInterface $channelRepository,
+        PaginationParameterValidator $paginationParametersValidator
+    ) {
         $this->channelRepository = $channelRepository;
+        $this->paginationParametersValidator = $paginationParametersValidator;
     }
 
     /**
@@ -26,6 +32,8 @@ class ProductParameterValidator implements ParameterValidatorInterface
      */
     public function validate(array $parameters, array $options = [])
     {
+        $this->paginationParametersValidator->validate($parameters, $options);
+
         $channel = null;
         if (isset($parameters['scope'])) {
             $channel = $this->channelRepository->findOneByIdentifier($parameters['scope']);

@@ -6,6 +6,7 @@ use Akeneo\Tool\Component\Api\Exception\PaginationParametersException;
 
 /**
  * Validator for the pagination parameters.
+ * TODO: to rename wih plural
  *
  * @author    Alexandre Hocquard <alexandre.hocquard@akeneo.com>
  * @copyright 2017 Akeneo SAS (http://www.akeneo.com)
