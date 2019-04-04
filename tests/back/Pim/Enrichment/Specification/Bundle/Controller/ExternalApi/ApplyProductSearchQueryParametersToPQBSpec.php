@@ -14,11 +14,11 @@ use Symfony\Component\HttpFoundation\ParameterBag;
 use Symfony\Component\HttpFoundation\Request;
 
 class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
+
     function let(
-        QueryParametersCheckerInterface $queryParametersChecker,
         IdentifiableObjectRepositoryInterface $channelRepository
     ) {
-        $this->beConstructedWith($queryParametersChecker, $channelRepository);
+        $this->beConstructedWith($channelRepository);
     }
 
     function it_adds_no_filter(
@@ -33,7 +33,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     }
 
     function it_adds_search_filter(
-        QueryParametersCheckerInterface $queryParametersChecker,
         ProductQueryBuilderInterface $pqb,
         Request $request,
         ParameterBag $query
@@ -46,7 +45,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
         ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce')->shouldBeCalled();
-        $queryParametersChecker->checkPropertyParameters('propertyCode', 'op')->shouldBeCalled();
 
         $pqb->addFilter('propertyCode', 'op', 'val', ['locale' => 'en_US', 'scope' => 'ecommerce'])->shouldBeCalled();
 
@@ -54,7 +52,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     }
 
     function it_adds_default_category_from_scope(
-        QueryParametersCheckerInterface $queryParametersChecker,
         ProductQueryBuilderInterface $pqb,
         IdentifiableObjectRepositoryInterface $channelRepository,
         Request $request,
@@ -70,7 +67,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
         $category->getCode()->willReturn('categoryCode')->shouldBeCalled();
         $query->get('search_locale')->willReturn('en_US');
         $query->get('search_scope')->willReturn('ecommerce');
-        $queryParametersChecker->checkPropertyParameters('categories', Operators::IN_CHILDREN_LIST)->shouldBeCalled();
 
         $pqb->addFilter('categories', Operators::IN_CHILDREN_LIST, ['categoryCode'], ['locale' => 'en_US', 'scope' => 'ecommerce'])->shouldBeCalled();
 
@@ -78,7 +74,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     }
 
     function it_adds_search_filter_specifying_scope_and_locale(
-        QueryParametersCheckerInterface $queryParametersChecker,
         ProductQueryBuilderInterface $pqb,
         Request $request,
         ParameterBag $query
@@ -92,7 +87,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
             'locale'=> 'fr_FR'
         ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
-        $queryParametersChecker->checkPropertyParameters('propertyCode', 'op')->shouldBeCalled();
 
         $pqb->addFilter('propertyCode', 'op', 'val', ['locale' => 'fr_FR', 'scope' => 'mobile'])->shouldBeCalled();
 
@@ -100,7 +94,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     }
 
     function it_adds_search_filter_for_datetimes(
-        QueryParametersCheckerInterface $queryParametersChecker,
         ProductQueryBuilderInterface $pqb,
         Request $request,
         ParameterBag $query
@@ -116,8 +109,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
         ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce')->shouldBeCalled();
-        $queryParametersChecker->checkPropertyParameters('created', Operators::BETWEEN)->shouldBeCalled();
-        $queryParametersChecker->checkPropertyParameters('updated', Operators::LOWER_THAN)->shouldBeCalled();
 
         $pqb->addFilter('created', Operators::BETWEEN, Argument::any(), ['locale' => 'en_US', 'scope' => 'ecommerce'])->shouldBeCalled();
         $pqb->addFilter('updated', Operators::LOWER_THAN, Argument::type(\DateTime::class), ['locale' => 'en_US', 'scope' => 'ecommerce'])->shouldBeCalled();

@@ -15,22 +15,39 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  */
 class GetListOfProductsQueryValidator
 {
+    private static $productFields = [
+        'family',
+        'categories',
+        'completeness',
+        'identifier',
+        'created',
+        'updated',
+        'enabled',
+        'groups',
+    ];
+
     /** @var IdentifiableObjectRepositoryInterface */
     private $categoryRepository;
 
     /** @var IdentifiableObjectRepositoryInterface */
     private $localeRepository;
 
+    /** @var IdentifiableObjectRepositoryInterface */
+    private $attributeRepository;
+
     /**
      * @param IdentifiableObjectRepositoryInterface $categoryRepository
      * @param IdentifiableObjectRepositoryInterface $localeRepository
+     * @param IdentifiableObjectRepositoryInterface $attributeRepository
      */
     public function __construct(
         IdentifiableObjectRepositoryInterface $categoryRepository,
-        IdentifiableObjectRepositoryInterface $localeRepository
+        IdentifiableObjectRepositoryInterface $localeRepository,
+        IdentifiableObjectRepositoryInterface $attributeRepository
     ) {
         $this->categoryRepository = $categoryRepository;
         $this->localeRepository = $localeRepository;
+        $this->attributeRepository = $attributeRepository;
     }
 
     /**
@@ -44,9 +61,8 @@ class GetListOfProductsQueryValidator
         $this->validateCriterionParameters($query);
         $this->validateCategoriesParameters($query);
         $this->validateLocalesParameters($query);
+        $this->validatePropertyParameters($query);
     }
-
-
 
     /**
      * @param GetListOfProductsQuery $query
@@ -169,6 +185,34 @@ class GetListOfProductsQueryValidator
             $plural = count($errors) > 1 ?
                 'Locales "%s" do not exist or are not activated.' : 'Locale "%s" does not exist or is not activated.';
             throw new UnprocessableEntityHttpException(sprintf($plural, implode(', ', $errors)));
+        }
+    }
+
+    /**
+     * TODO: the support of the operator is not validated in this method (we only check the property)
+     *       We should change the exception message or update this method's behaviour
+     *
+     * @param GetListOfProductsQuery $query
+     *
+     * @throws UnprocessableEntityHttpException
+     */
+    public function validatePropertyParameters(GetListOfProductsQuery $query): void
+    {
+        foreach ($query->search as $propertyCode => $filters) {
+            foreach ($filters as $filter) {
+                if (
+                    !in_array($propertyCode, self::$productFields) &&
+                    null === $this->attributeRepository->findOneByIdentifier($propertyCode)
+                ) {
+                    throw new UnprocessableEntityHttpException(
+                        sprintf(
+                            'Filter on property "%s" is not supported or does not support operator "%s"',
+                            $propertyCode,
+                            $filter['operator']
+                        )
+                    );
+                }
+            }
         }
     }
 }

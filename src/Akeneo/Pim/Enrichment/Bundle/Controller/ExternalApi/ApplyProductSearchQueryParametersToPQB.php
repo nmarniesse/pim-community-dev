@@ -6,7 +6,6 @@ namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
 
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderInterface;
-use Akeneo\Tool\Bundle\ApiBundle\Checker\QueryParametersCheckerInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
@@ -17,17 +16,12 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  */
 final class ApplyProductSearchQueryParametersToPQB
 {
-    /** @var QueryParametersCheckerInterface */
-    private $queryParametersChecker;
-
     /** @var IdentifiableObjectRepositoryInterface */
     private $channelRepository;
 
     public function __construct(
-        QueryParametersCheckerInterface $queryParametersChecker,
         IdentifiableObjectRepositoryInterface $channelRepository
     ) {
-        $this->queryParametersChecker = $queryParametersChecker;
         $this->channelRepository = $channelRepository;
     }
 
@@ -89,8 +83,6 @@ final class ApplyProductSearchQueryParametersToPQB
                         $value = \DateTime::createFromFormat('Y-m-d H:i:s', $value);
                     }
                 }
-
-                $this->queryParametersChecker->checkPropertyParameters($propertyCode, $filter['operator']);
 
                 $pqb->addFilter($propertyCode, $filter['operator'], $value, $context);
             }
