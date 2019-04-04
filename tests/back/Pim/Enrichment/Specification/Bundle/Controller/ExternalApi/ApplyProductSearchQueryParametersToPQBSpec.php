@@ -40,11 +40,10 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     ) {
         $request->query = $query;
         $query->has('search')->willReturn(true);
-        $query->get('search', '')->willReturn('a_json');
-        $queryParametersChecker->checkCriterionParameters('a_json')->willReturn(['propertyCode' => [[
+        $query->get('search', '')->willReturn(json_encode(['propertyCode' => [[
             'operator' => 'op',
             'value' => 'val'
-        ]]])->shouldBeCalled(1);
+        ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
         $queryParametersChecker->checkLocalesParameters(['en_US'])->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce')->shouldBeCalled();
@@ -88,13 +87,12 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     ) {
         $request->query = $query;
         $query->has('search')->willReturn(true);
-        $query->get('search', '')->willReturn('a_json');
-        $queryParametersChecker->checkCriterionParameters('a_json')->willReturn(['propertyCode' => [[
+        $query->get('search', '')->willReturn(json_encode(['propertyCode' => [[
             'operator' => 'op',
             'value' => 'val',
             'scope' => 'mobile',
             'locale'=> 'fr_FR'
-        ]]])->shouldBeCalled(1);
+        ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
         $queryParametersChecker->checkLocalesParameters(['fr_FR'])->shouldBeCalled();
         $queryParametersChecker->checkPropertyParameters('propertyCode', 'op')->shouldBeCalled();
@@ -112,14 +110,13 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
     ) {
         $request->query = $query;
         $query->has('search')->willReturn(true);
-        $query->get('search', '')->willReturn('a_json');
-        $queryParametersChecker->checkCriterionParameters('a_json')->willReturn(['created' => [[
+        $query->get('search', '')->willReturn(json_encode(['created' => [[
             'operator' => Operators::BETWEEN,
             'value' => ['2019-01-28 12:12:12', '2019-02-28 13:13:13'],
         ]], 'updated' => [[
             'operator' => Operators::LOWER_THAN,
             'value' => '2020-03-38 14:14:14'
-        ]]])->shouldBeCalled(1);
+        ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
         $queryParametersChecker->checkLocalesParameters(['en_US'])->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce')->shouldBeCalled();

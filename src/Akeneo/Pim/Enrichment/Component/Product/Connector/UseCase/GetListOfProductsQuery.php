@@ -12,7 +12,7 @@ namespace Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase;
 final class GetListOfProductsQuery
 {
     /** @var array */
-    public $search;
+    public $search = [];
 
     /** @var string */
     public $channel;

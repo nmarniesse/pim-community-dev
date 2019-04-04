@@ -9,6 +9,7 @@ use Akeneo\Pim\Enrichment\Component\Product\Builder\ProductBuilderInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\AddParent;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\InvalidOperatorException;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\ObjectNotFoundException;
@@ -221,10 +222,10 @@ class ProductController
 
         $query->withCount = $request->query->get('with_count', false);
 
-        /*
         $validator = new GetListOfProductsQueryValidator();
         $validator->validate($query);
 
+        /*
         $handler = new GetListOfProductsQueryHandler();
         $products = $handler->handle($query);
 
