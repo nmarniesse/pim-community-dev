@@ -68,15 +68,12 @@ final class ApplyProductSearchQueryParametersToPQB
                 $searchLocale = $request->query->get('search_locale');
                 $context['locale'] = isset($filter['locale']) ? $filter['locale'] : $searchLocale;
 
-                $context['scope'] = isset($filter['scope']) ? $filter['scope'] : $request->query->get('search_scope');
-
                 if (isset($filter['locales']) && '' !== $filter['locales']) {
+                    //$context['locales'] = is_array($filter['locales']) ? $filter['locales'] : [$filter['locales']];
                     $context['locales'] = $filter['locales'];
-
-                    $this->queryParametersChecker->checkLocalesParameters(
-                        !is_array($context['locales']) ? [$context['locales']] : $context['locales']
-                    );
                 }
+
+                $context['scope'] = isset($filter['scope']) ? $filter['scope'] : $request->query->get('search_scope');
 
                 $value = isset($filter['value']) ? $filter['value'] : null;
 

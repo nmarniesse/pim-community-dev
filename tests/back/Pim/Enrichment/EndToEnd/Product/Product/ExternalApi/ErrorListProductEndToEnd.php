@@ -141,7 +141,7 @@ class ErrorListProductEndToEnd extends AbstractProductTestCase
         $client = $this->createAuthenticatedClient();
 
         $client->request('GET', '/api/rest/v1/products?search={"completeness":[{"operator":"GREATER THAN ON ALL LOCALES", "scope":"ecommerce", "value":100, "locales":"fr_FR"}]}');
-        $this->assert($client, 'Property "completeness" expects an array of arrays as data.', Response::HTTP_UNPROCESSABLE_ENTITY);
+        $this->assert($client, 'Property "completeness" expects an array with the key "locales".', Response::HTTP_UNPROCESSABLE_ENTITY);
     }
 
     public function testSearchWithEmptyLocales()

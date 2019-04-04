@@ -134,28 +134,41 @@ class GetListOfProductsQueryValidator
      */
     private function validateLocalesParameters(GetListOfProductsQuery $query): void
     {
+        $localeCodes = [];
         foreach ($query->search as $propertyCode => $filters) {
             foreach ($filters as $filter) {
                 $localesFilter = isset($filter['locale']) ? $filter['locale'] : $query->searchLocale;
 
                 if (null !== $localesFilter && is_string($localesFilter)) {
-                    $localeCodes = array_map('trim', explode(',', $localesFilter));
+                    $localeCodes = array_merge($localeCodes, array_map('trim', explode(',', $localesFilter)));
+                }
 
-                    $errors = [];
-                    foreach ($localeCodes as $localeCode) {
-                        $locale = $this->localeRepository->findOneByIdentifier($localeCode);
-                        if (null === $locale || !$locale->isActivated()) {
-                            $errors[] = $localeCode;
-                        }
+                // For completeness filter only
+                if (isset($filter['locales'])) {
+                    if (!is_array($filter['locales'])) {
+                        throw new UnprocessableEntityHttpException(
+                            sprintf('Property "%s" expects an array with the key "locales".', $propertyCode)
+                        );
                     }
 
-                    if (!empty($errors)) {
-                        $plural = count($errors) > 1 ?
-                            'Locales "%s" do not exist or are not activated.' : 'Locale "%s" does not exist or is not activated.';
-                        throw new UnprocessableEntityHttpException(sprintf($plural, implode(', ', $errors)));
-                    }
+                    $localeCodes = array_merge($localeCodes, $filter['locales']);
                 }
             }
+        }
+
+        $localeCodes = array_unique($localeCodes);
+        $errors = [];
+        foreach ($localeCodes as $localeCode) {
+            $locale = $this->localeRepository->findOneByIdentifier($localeCode);
+            if (null === $locale || !$locale->isActivated()) {
+                $errors[] = $localeCode;
+            }
+        }
+
+        if (!empty($errors)) {
+            $plural = count($errors) > 1 ?
+                'Locales "%s" do not exist or are not activated.' : 'Locale "%s" does not exist or is not activated.';
+            throw new UnprocessableEntityHttpException(sprintf($plural, implode(', ', $errors)));
         }
     }
 }
