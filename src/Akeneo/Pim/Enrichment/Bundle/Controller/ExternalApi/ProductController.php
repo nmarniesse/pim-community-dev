@@ -4,11 +4,9 @@ declare(strict_types=1);
 
 namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
 
-use Akeneo\Channel\Component\Model\ChannelInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Builder\ProductBuilderInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
-use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\AddParent;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\InvalidOperatorException;
@@ -18,7 +16,6 @@ use Akeneo\Pim\Enrichment\Component\Product\Model\ProductInterface;
 use Akeneo\Pim\Enrichment\Component\Product\ProductModel\Filter\AttributeFilterInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderFactoryInterface;
-use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Sorter\Directions;
 use Akeneo\Pim\Structure\Component\Repository\ExternalApi\AttributeRepositoryInterface;
 use Akeneo\Tool\Bundle\ApiBundle\Checker\QueryParametersCheckerInterface;
@@ -134,6 +131,9 @@ class ProductController
     /** @var ProductParameterValidator */
     private $productParameterValidator;
 
+    /** @var GetListOfProductsQueryValidator */
+    private $getListOfProductsValidator;
+
     public function __construct(
         ProductParameterValidator $productParameterValidator,
         ProductQueryBuilderFactoryInterface $searchAfterPqbFactory,
@@ -159,6 +159,7 @@ class ProductController
         ProductBuilderInterface $variantProductBuilder,
         AttributeFilterInterface $productAttributeFilter,
         AddParent $addParent,
+        GetListOfProductsQueryValidator $getListOfProductsQueryValidator,
         array $apiConfiguration
     ) {
         $this->productParameterValidator = $productParameterValidator;
@@ -186,6 +187,7 @@ class ProductController
         $this->apiConfiguration = $apiConfiguration;
         $this->productAttributeFilter = $productAttributeFilter;
         $this->addParent = $addParent;
+        $this->getListOfProductsValidator = $getListOfProductsQueryValidator;
     }
 
     /**
@@ -221,9 +223,7 @@ class ProductController
         }
 
         $query->withCount = $request->query->get('with_count', false);
-
-        $validator = new GetListOfProductsQueryValidator();
-        $validator->validate($query);
+        $this->getListOfProductsValidator->validate($query);
 
         /*
         $handler = new GetListOfProductsQueryHandler();

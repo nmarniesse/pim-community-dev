@@ -49,10 +49,6 @@ final class ApplyProductSearchQueryParametersToPQB
         if ($request->query->has('search')) {
             $searchString = $request->query->get('search', '');
             $searchParameters = json_decode($searchString, true);
-
-            if (isset($searchParameters['categories'])) {
-                $this->queryParametersChecker->checkCategoriesParameters($searchParameters['categories']);
-            }
         }
 
         if (!isset($searchParameters['categories'])) {

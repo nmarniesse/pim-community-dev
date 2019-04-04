@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase;
 
+use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
@@ -14,6 +15,14 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
  */
 class GetListOfProductsQueryValidator
 {
+    /** @var IdentifiableObjectRepositoryInterface */
+    private $categoryRepository;
+
+    public function __construct(IdentifiableObjectRepositoryInterface $categoryRepository)
+    {
+        $this->categoryRepository = $categoryRepository;
+    }
+
     /**
      * @param GetListOfProductsQuery $query
      *
@@ -23,6 +32,7 @@ class GetListOfProductsQueryValidator
     public function validate(GetListOfProductsQuery $query)
     {
         $this->validateCriterionParameters($query);
+        $this->validateCategoriesParameters($query);
     }
 
     /**
@@ -31,8 +41,8 @@ class GetListOfProductsQueryValidator
      * @throws BadRequestHttpException
      * @throws UnprocessableEntityHttpException
      */
-    private function validateCriterionParameters(GetListOfProductsQuery $query) {
-
+    private function validateCriterionParameters(GetListOfProductsQuery $query): void
+    {
         if (null === $query->search) {
             throw new BadRequestHttpException('Search query parameter should be valid JSON.');
         }
@@ -67,6 +77,35 @@ class GetListOfProductsQueryValidator
                     );
                 }
             }
+        }
+    }
+
+    private function validateCategoriesParameters(GetListOfProductsQuery $query): void
+    {
+        if (!isset($query->search['categories'])) {
+            return;
+        }
+
+        $categories = $query->search['categories'];
+        if (!is_array($categories)) {
+            throw new UnprocessableEntityHttpException(
+                sprintf('Search query parameter "categories" has to be an array, "%s" given.', gettype($categories))
+            );
+        }
+
+        $errors = [];
+        foreach ($categories as $category) {
+            foreach ($category['value'] as $categoryCode) {
+                $categoryCode = trim($categoryCode);
+                if (null === $this->categoryRepository->findOneByIdentifier($categoryCode)) {
+                    $errors[] = $categoryCode;
+                }
+            }
+        }
+
+        if (!empty($errors)) {
+            $plural = count($errors) > 1 ? 'Categories "%s" do not exist.' : 'Category "%s" does not exist.';
+            throw new UnprocessableEntityHttpException(sprintf($plural, implode(', ', $errors)));
         }
     }
 }
