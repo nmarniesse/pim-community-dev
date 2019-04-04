@@ -23,6 +23,9 @@ final class GetListOfProductsQuery
     /** @var string */
     public $searchLocale;
 
+    /** @var string */
+    public $searchScope;
+
     /** @var string[] */
     public $attributes;
 

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
 
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
@@ -36,17 +37,12 @@ final class ApplyProductSearchQueryParametersToPQB
      */
     public function apply(
         ProductQueryBuilderInterface $pqb,
-        Request $request
+        GetListOfProductsQuery $query
     ): void {
-        $searchParameters = [];
-
-        if ($request->query->has('search')) {
-            $searchString = $request->query->get('search', '');
-            $searchParameters = json_decode($searchString, true);
-        }
+        $searchParameters = $query->search;
 
         if (!isset($searchParameters['categories'])) {
-            $channel = $this->channelRepository->findOneByIdentifier($request->get('scope', null));
+            $channel = $this->channelRepository->findOneByIdentifier($query->channel);
             if (null !== $channel) {
                 $searchParameters['categories'] = [
                     [
@@ -59,15 +55,14 @@ final class ApplyProductSearchQueryParametersToPQB
 
         foreach ($searchParameters as $propertyCode => $filters) {
             foreach ($filters as $filter) {
-                $searchLocale = $request->query->get('search_locale');
+                $searchLocale = $query->searchLocale;
                 $context['locale'] = isset($filter['locale']) ? $filter['locale'] : $searchLocale;
 
                 if (isset($filter['locales']) && '' !== $filter['locales']) {
-                    //$context['locales'] = is_array($filter['locales']) ? $filter['locales'] : [$filter['locales']];
                     $context['locales'] = $filter['locales'];
                 }
 
-                $context['scope'] = isset($filter['scope']) ? $filter['scope'] : $request->query->get('search_scope');
+                $context['scope'] = isset($filter['scope']) ? $filter['scope'] : $query->searchScope;
 
                 $value = isset($filter['value']) ? $filter['value'] : null;
 

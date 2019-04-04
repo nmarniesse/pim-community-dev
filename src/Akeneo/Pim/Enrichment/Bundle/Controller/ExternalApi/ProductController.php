@@ -7,6 +7,7 @@ namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
 use Akeneo\Pim\Enrichment\Component\Product\Builder\ProductBuilderInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\AddParent;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\InvalidOperatorException;
@@ -211,10 +212,6 @@ class ProductController
             $query->attributes = explode(',', $request->query->get('attributes'));
         }
 
-        if ($request->query->has('scope')) {
-            $query->channel = $request->query->get('scope');
-        }
-
         if ($request->query->has('locales')) {
             $query->locales = explode(',', $request->query->get('locales'));
         }
@@ -223,21 +220,23 @@ class ProductController
             $query->search = json_decode($request->query->get('search'), true);
         }
 
+        $query->channel = $request->query->get('scope', null);
+        $query->limit = $request->query->get('limit', $this->apiConfiguration['pagination']['limit_by_default']);
+        $query->paginationType = $request->query->get('pagination_type', PaginationTypes::OFFSET);
         $query->searchLocale = $request->query->get('search_locale', null);
-
         $query->withCount = $request->query->get('with_count', false);
+        $query->page = $request->query->get('page', 1);
+        $query->searchScope = $request->query->get('search_scope', null);
+        $query->searchAfter = $request->query->get('search_after', null);
+
         $this->getListOfProductsValidator->validate($query);
 
-        $products = $this->getTemporaryProducts($request);
+        //$handler = new GetListOfProductsQueryHandler();
+        //$products = $handler->handle($query);
+
+        $products = $this->getTemporaryProducts($query);
 
         return new JsonResponse($this->normalizeTemporaryProducts($request, $products));
-
-        /*
-        $handler = new GetListOfProductsQueryHandler();
-        $products = $handler->handle($query);
-
-        return array_map($normalize, $products);
-        */
     }
 
     /**
@@ -577,29 +576,20 @@ class ProductController
         }
     }
 
-    /**
-     * @param Request               $request
-     * @param array                 $queryParameters
-     *
-     * @return CursorInterface
-     *
-     * @throws ServerErrorResponseException
-     */
-    protected function searchAfterOffset(
-        Request $request,
-        array $queryParameters
-    ): CursorInterface {
-        $from = isset($queryParameters['page']) ? ($queryParameters['page'] - 1) * $queryParameters['limit'] : 0;
-        $pqb = $this->fromSizePqbFactory->create(['limit' => (int) $queryParameters['limit'], 'from' => (int) $from]);
+    protected function searchAfterOffset(GetListOfProductsQuery $query): CursorInterface {
+        $pqb = $this->fromSizePqbFactory->create([
+            'limit' => (int) $query->limit,
+            'from' => ($query->page - 1) * $query->limit
+        ]);
 
         try {
-            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request);
+            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $query);
         } catch (
-        UnsupportedFilterException
-        | PropertyException
-        | InvalidOperatorException
-        | ObjectNotFoundException
-        $e
+            UnsupportedFilterException
+            | PropertyException
+            | InvalidOperatorException
+            | ObjectNotFoundException
+            $e
         ) {
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
@@ -609,31 +599,18 @@ class ProductController
         return $pqb->execute();
     }
 
-    /**
-     * @param Request               $request
-     * @param array                 $queryParameters
-     *
-     * @throws UnprocessableEntityHttpException
-     * @throws DocumentedHttpException
-     * @throws ServerErrorResponseException
-     *
-     * @return CursorInterface
-     */
-    protected function searchAfterIdentifier(
-        Request $request,
-        array $queryParameters
-    ): CursorInterface {
-        $pqbOptions = ['limit' => (int) $queryParameters['limit']];
-        $searchParameterCrypted = null;
-        if (isset($queryParameters['search_after'])) {
-            $searchParameterDecrypted = $this->primaryKeyEncrypter->decrypt($queryParameters['search_after']);
+    protected function searchAfterIdentifier(GetListOfProductsQuery $query): CursorInterface {
+        $pqbOptions = ['limit' => (int) $query->limit];
+
+        if (null !== $query->searchAfter) {
+            $searchParameterDecrypted = $this->primaryKeyEncrypter->decrypt($query->searchAfter);
             $pqbOptions['search_after_unique_key'] = $searchParameterDecrypted;
             $pqbOptions['search_after'] = [$searchParameterDecrypted];
         }
         $pqb = $this->searchAfterPqbFactory->create($pqbOptions);
 
         try {
-            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $request);
+            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $query);
         } catch (
         UnsupportedFilterException
         | PropertyException
@@ -693,18 +670,11 @@ class ProductController
             isset($data['parent']) && '' !== $data['parent'];
     }
 
-    private function getTemporaryProducts(Request $request)
+    private function getTemporaryProducts(GetListOfProductsQuery $query)
     {
-        $defaultParameters = [
-            'pagination_type' => PaginationTypes::OFFSET,
-            'limit'           => $this->apiConfiguration['pagination']['limit_by_default'],
-        ];
-
-        $queryParameters = array_merge($defaultParameters, $request->query->all());
-
-        return PaginationTypes::OFFSET === $queryParameters['pagination_type'] ?
-            $this->searchAfterOffset($request, $queryParameters) :
-            $this->searchAfterIdentifier($request, $queryParameters);
+        return PaginationTypes::OFFSET === $query->paginationType ?
+            $this->searchAfterOffset($query) :
+            $this->searchAfterIdentifier($query);
     }
 
     private function normalizeTemporaryProducts(Request $request, CursorInterface $products)
