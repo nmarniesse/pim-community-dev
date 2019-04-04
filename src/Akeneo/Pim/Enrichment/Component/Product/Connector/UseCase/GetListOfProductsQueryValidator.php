@@ -18,9 +18,19 @@ class GetListOfProductsQueryValidator
     /** @var IdentifiableObjectRepositoryInterface */
     private $categoryRepository;
 
-    public function __construct(IdentifiableObjectRepositoryInterface $categoryRepository)
-    {
+    /** @var IdentifiableObjectRepositoryInterface */
+    private $localeRepository;
+
+    /**
+     * @param IdentifiableObjectRepositoryInterface $categoryRepository
+     * @param IdentifiableObjectRepositoryInterface $localeRepository
+     */
+    public function __construct(
+        IdentifiableObjectRepositoryInterface $categoryRepository,
+        IdentifiableObjectRepositoryInterface $localeRepository
+    ) {
         $this->categoryRepository = $categoryRepository;
+        $this->localeRepository = $localeRepository;
     }
 
     /**
@@ -33,7 +43,10 @@ class GetListOfProductsQueryValidator
     {
         $this->validateCriterionParameters($query);
         $this->validateCategoriesParameters($query);
+        $this->validateLocalesParameters($query);
     }
+
+
 
     /**
      * @param GetListOfProductsQuery $query
@@ -80,6 +93,11 @@ class GetListOfProductsQueryValidator
         }
     }
 
+    /**
+     * @param GetListOfProductsQuery $query
+     *
+     * @throws UnprocessableEntityHttpException
+     */
     private function validateCategoriesParameters(GetListOfProductsQuery $query): void
     {
         if (!isset($query->search['categories'])) {
@@ -106,6 +124,38 @@ class GetListOfProductsQueryValidator
         if (!empty($errors)) {
             $plural = count($errors) > 1 ? 'Categories "%s" do not exist.' : 'Category "%s" does not exist.';
             throw new UnprocessableEntityHttpException(sprintf($plural, implode(', ', $errors)));
+        }
+    }
+
+    /**
+     * @param GetListOfProductsQuery $query
+     *
+     * @throws UnprocessableEntityHttpException
+     */
+    private function validateLocalesParameters(GetListOfProductsQuery $query): void
+    {
+        foreach ($query->search as $propertyCode => $filters) {
+            foreach ($filters as $filter) {
+                $localesFilter = isset($filter['locale']) ? $filter['locale'] : $query->searchLocale;
+
+                if (null !== $localesFilter && is_string($localesFilter)) {
+                    $localeCodes = array_map('trim', explode(',', $localesFilter));
+
+                    $errors = [];
+                    foreach ($localeCodes as $localeCode) {
+                        $locale = $this->localeRepository->findOneByIdentifier($localeCode);
+                        if (null === $locale || !$locale->isActivated()) {
+                            $errors[] = $localeCode;
+                        }
+                    }
+
+                    if (!empty($errors)) {
+                        $plural = count($errors) > 1 ?
+                            'Locales "%s" do not exist or are not activated.' : 'Locale "%s" does not exist or is not activated.';
+                        throw new UnprocessableEntityHttpException(sprintf($plural, implode(', ', $errors)));
+                    }
+                }
+            }
         }
     }
 }

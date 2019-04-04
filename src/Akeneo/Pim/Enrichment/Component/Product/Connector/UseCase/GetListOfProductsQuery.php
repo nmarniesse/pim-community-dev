@@ -20,6 +20,9 @@ final class GetListOfProductsQuery
     /** @var string[] */
     public $locales;
 
+    /** @var string */
+    public $searchLocale;
+
     /** @var string[] */
     public $attributes;
 

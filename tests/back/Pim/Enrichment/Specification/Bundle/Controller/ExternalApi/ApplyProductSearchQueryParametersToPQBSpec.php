@@ -45,7 +45,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
             'value' => 'val'
         ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
-        $queryParametersChecker->checkLocalesParameters(['en_US'])->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce')->shouldBeCalled();
         $queryParametersChecker->checkPropertyParameters('propertyCode', 'op')->shouldBeCalled();
 
@@ -70,7 +69,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
         $channel->getCategory()->willReturn($category)->shouldBeCalled();
         $category->getCode()->willReturn('categoryCode')->shouldBeCalled();
         $query->get('search_locale')->willReturn('en_US');
-        $queryParametersChecker->checkLocalesParameters(['en_US'])->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce');
         $queryParametersChecker->checkPropertyParameters('categories', Operators::IN_CHILDREN_LIST)->shouldBeCalled();
 
@@ -94,7 +92,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
             'locale'=> 'fr_FR'
         ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
-        $queryParametersChecker->checkLocalesParameters(['fr_FR'])->shouldBeCalled();
         $queryParametersChecker->checkPropertyParameters('propertyCode', 'op')->shouldBeCalled();
 
         $pqb->addFilter('propertyCode', 'op', 'val', ['locale' => 'fr_FR', 'scope' => 'mobile'])->shouldBeCalled();
@@ -118,7 +115,6 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior {
             'value' => '2020-03-38 14:14:14'
         ]]]));
         $query->get('search_locale')->willReturn('en_US')->shouldBeCalled();
-        $queryParametersChecker->checkLocalesParameters(['en_US'])->shouldBeCalled();
         $query->get('search_scope')->willReturn('ecommerce')->shouldBeCalled();
         $queryParametersChecker->checkPropertyParameters('created', Operators::BETWEEN)->shouldBeCalled();
         $queryParametersChecker->checkPropertyParameters('updated', Operators::LOWER_THAN)->shouldBeCalled();

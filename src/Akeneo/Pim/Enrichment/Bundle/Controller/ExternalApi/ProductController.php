@@ -222,6 +222,8 @@ class ProductController
             $query->search = json_decode($request->query->get('search'), true);
         }
 
+        $query->searchLocale = $request->query->get('search_locale', null);
+
         $query->withCount = $request->query->get('with_count', false);
         $this->getListOfProductsValidator->validate($query);
 

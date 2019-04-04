@@ -4,3 +4,4 @@ services:
         class: Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator
         arguments:
             - '@pim_catalog.repository.cached_category'
+            - '@pim_catalog.repository.cached_locale'
