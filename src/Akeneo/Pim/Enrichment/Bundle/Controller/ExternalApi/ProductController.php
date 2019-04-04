@@ -29,6 +29,7 @@ use Akeneo\Tool\Component\Api\Pagination\PaginatorInterface;
 use Akeneo\Tool\Component\Api\Pagination\ParameterValidatorInterface;
 use Akeneo\Tool\Component\Api\Pagination\ProductParameterValidator;
 use Akeneo\Tool\Component\Api\Security\PrimaryKeyEncrypter;
+use Akeneo\Tool\Component\StorageUtils\Cursor\CursorInterface;
 use Akeneo\Tool\Component\StorageUtils\Exception\PropertyException;
 use Akeneo\Tool\Component\StorageUtils\Exception\UnknownPropertyException;
 use Akeneo\Tool\Component\StorageUtils\Remover\RemoverInterface;
@@ -227,26 +228,16 @@ class ProductController
         $query->withCount = $request->query->get('with_count', false);
         $this->getListOfProductsValidator->validate($query);
 
+        $products = $this->getTemporaryProducts($request);
+
+        return new JsonResponse($this->normalizeTemporaryProducts($request, $products));
+
         /*
         $handler = new GetListOfProductsQueryHandler();
         $products = $handler->handle($query);
 
         return array_map($normalize, $products);
         */
-
-        $normalizerOptions = $this->getNormalizerOptions($request);
-        $defaultParameters = [
-            'pagination_type' => PaginationTypes::OFFSET,
-            'limit'           => $this->apiConfiguration['pagination']['limit_by_default'],
-        ];
-
-        $queryParameters = array_merge($defaultParameters, $request->query->all());
-
-        $paginatedProducts = PaginationTypes::OFFSET === $queryParameters['pagination_type'] ?
-            $this->searchAfterOffset($request, $queryParameters, $normalizerOptions) :
-            $this->searchAfterIdentifier($request, $queryParameters, $normalizerOptions);
-
-        return new JsonResponse($paginatedProducts);
     }
 
     /**
@@ -589,17 +580,15 @@ class ProductController
     /**
      * @param Request               $request
      * @param array                 $queryParameters
-     * @param array                 $normalizerOptions
      *
-     * @return array
+     * @return CursorInterface
      *
      * @throws ServerErrorResponseException
      */
     protected function searchAfterOffset(
         Request $request,
-        array $queryParameters,
-        array $normalizerOptions
-    ): array {
+        array $queryParameters
+    ): CursorInterface {
         $from = isset($queryParameters['page']) ? ($queryParameters['page'] - 1) * $queryParameters['limit'] : 0;
         $pqb = $this->fromSizePqbFactory->create(['limit' => (int) $queryParameters['limit'], 'from' => (int) $from]);
 
@@ -616,61 +605,27 @@ class ProductController
         }
 
         $pqb->addSorter('id', Directions::ASCENDING);
-        $products = $pqb->execute();
 
-        $queryParameters = array_merge(['page' => 1, 'with_count' => 'false'], $queryParameters);
-
-        $paginationParameters = [
-            'query_parameters'    => $queryParameters,
-            'list_route_name'     => 'pim_api_product_list',
-            'item_route_name'     => 'pim_api_product_get',
-            'item_identifier_key' => 'identifier',
-        ];
-
-        try {
-            $count = 'true' === $queryParameters['with_count'] ? $products->count() : null;
-            $paginatedProducts = $this->offsetPaginator->paginate(
-                $this->normalizer->normalize($products, 'external_api', $normalizerOptions),
-                $paginationParameters,
-                $count
-            );
-        } catch (ServerErrorResponseException $e) {
-            $message = json_decode($e->getMessage(), true);
-            if (null !== $message && isset($message['error']['root_cause'][0]['type'])
-                && 'query_phase_execution_exception' === $message['error']['root_cause'][0]['type']) {
-                throw new DocumentedHttpException(
-                    Documentation::URL_DOCUMENTATION . 'pagination.html#search-after-type',
-                    'You have reached the maximum number of pages you can retrieve with the "page" pagination type. Please use the search after pagination type instead',
-                    $e
-                );
-            }
-
-            throw new ServerErrorResponseException($e->getMessage(), $e->getCode(), $e);
-        }
-
-        return $paginatedProducts;
+        return $pqb->execute();
     }
 
     /**
      * @param Request               $request
      * @param array                 $queryParameters
-     * @param array                 $normalizerOptions
      *
      * @throws UnprocessableEntityHttpException
      * @throws DocumentedHttpException
      * @throws ServerErrorResponseException
      *
-     * @return array
+     * @return CursorInterface
      */
     protected function searchAfterIdentifier(
         Request $request,
-        array $queryParameters,
-        array $normalizerOptions
-    ): array {
+        array $queryParameters
+    ): CursorInterface {
         $pqbOptions = ['limit' => (int) $queryParameters['limit']];
         $searchParameterCrypted = null;
         if (isset($queryParameters['search_after'])) {
-            $searchParameterCrypted = $queryParameters['search_after'];
             $searchParameterDecrypted = $this->primaryKeyEncrypter->decrypt($queryParameters['search_after']);
             $pqbOptions['search_after_unique_key'] = $searchParameterDecrypted;
             $pqbOptions['search_after'] = [$searchParameterDecrypted];
@@ -690,27 +645,8 @@ class ProductController
         }
 
         $pqb->addSorter('id', Directions::ASCENDING);
-        $products = iterator_to_array($pqb->execute());
-        $lastProduct = end($products);
 
-        $parameters = [
-            'query_parameters'    => $queryParameters,
-            'search_after'        => [
-                'next' => false !== $lastProduct ? $this->primaryKeyEncrypter->encrypt($lastProduct->getId()) : null,
-                'self' => $searchParameterCrypted,
-            ],
-            'list_route_name'     => 'pim_api_product_list',
-            'item_route_name'     => 'pim_api_product_get',
-            'item_identifier_key' => 'identifier'
-        ];
-
-        $paginatedProducts = $this->searchAfterPaginator->paginate(
-            $this->normalizer->normalize($products, 'external_api', $normalizerOptions),
-            $parameters,
-            null
-        );
-
-        return $paginatedProducts;
+        return $pqb->execute();
     }
 
     /**
@@ -755,5 +691,95 @@ class ProductController
     {
         return !$isCreation && !$product->isVariant() &&
             isset($data['parent']) && '' !== $data['parent'];
+    }
+
+    private function getTemporaryProducts(Request $request)
+    {
+        $defaultParameters = [
+            'pagination_type' => PaginationTypes::OFFSET,
+            'limit'           => $this->apiConfiguration['pagination']['limit_by_default'],
+        ];
+
+        $queryParameters = array_merge($defaultParameters, $request->query->all());
+
+        return PaginationTypes::OFFSET === $queryParameters['pagination_type'] ?
+            $this->searchAfterOffset($request, $queryParameters) :
+            $this->searchAfterIdentifier($request, $queryParameters);
+    }
+
+    private function normalizeTemporaryProducts(Request $request, CursorInterface $products)
+    {
+        $normalizerOptions = $this->getNormalizerOptions($request);
+        $defaultParameters = [
+            'pagination_type' => PaginationTypes::OFFSET,
+            'limit'           => $this->apiConfiguration['pagination']['limit_by_default'],
+        ];
+
+        $queryParameters = array_merge($defaultParameters, $request->query->all());
+
+        if (PaginationTypes::OFFSET === $queryParameters['pagination_type']) {
+
+            $queryParameters = array_merge(['page' => 1, 'with_count' => 'false'], $queryParameters);
+
+            $paginationParameters = [
+                'query_parameters'    => $queryParameters,
+                'list_route_name'     => 'pim_api_product_list',
+                'item_route_name'     => 'pim_api_product_get',
+                'item_identifier_key' => 'identifier',
+            ];
+
+            try {
+                $count = 'true' === $queryParameters['with_count'] ? $products->count() : null;
+                $paginatedProducts = $this->offsetPaginator->paginate(
+                    $this->normalizer->normalize($products, 'external_api', $normalizerOptions),
+                    $paginationParameters,
+                    $count
+                );
+            } catch (ServerErrorResponseException $e) {
+                $message = json_decode($e->getMessage(), true);
+                if (null !== $message && isset($message['error']['root_cause'][0]['type'])
+                    && 'query_phase_execution_exception' === $message['error']['root_cause'][0]['type']) {
+                    throw new DocumentedHttpException(
+                        Documentation::URL_DOCUMENTATION . 'pagination.html#search-after-type',
+                        'You have reached the maximum number of pages you can retrieve with the "page" pagination type. Please use the search after pagination type instead',
+                        $e
+                    );
+                }
+
+                throw new ServerErrorResponseException($e->getMessage(), $e->getCode(), $e);
+            }
+
+            return $paginatedProducts;
+        }
+
+        else {
+            $products = iterator_to_array($products);
+
+            $searchParameterCrypted = null;
+            if (isset($queryParameters['search_after'])) {
+                $searchParameterCrypted = $queryParameters['search_after'];
+            }
+
+            $lastProduct = end($products);
+
+            $parameters = [
+                'query_parameters'    => $queryParameters,
+                'search_after'        => [
+                    'next' => false !== $lastProduct ? $this->primaryKeyEncrypter->encrypt($lastProduct->getId()) : null,
+                    'self' => $searchParameterCrypted,
+                ],
+                'list_route_name'     => 'pim_api_product_list',
+                'item_route_name'     => 'pim_api_product_get',
+                'item_identifier_key' => 'identifier'
+            ];
+
+            $paginatedProducts = $this->searchAfterPaginator->paginate(
+                $this->normalizer->normalize($products, 'external_api', $normalizerOptions),
+                $parameters,
+                null
+            );
+
+            return $paginatedProducts;
+        }
     }
 }
