@@ -17,7 +17,7 @@ class ProductParameterValidator implements ParameterValidatorInterface
     /** @var IdentifiableObjectRepositoryInterface */
     private $channelRepository;
 
-    /** @var PaginationParameterValidator */
+    /** @var PaginationParametersValidator */
     private $paginationParametersValidator;
 
     /** @var QueryParametersCheckerInterface */
@@ -25,7 +25,7 @@ class ProductParameterValidator implements ParameterValidatorInterface
 
     public function __construct(
         IdentifiableObjectRepositoryInterface $channelRepository,
-        PaginationParameterValidator $paginationParametersValidator,
+        PaginationParametersValidator $paginationParametersValidator,
         QueryParametersCheckerInterface $queryParametersChecker
     ) {
         $this->channelRepository = $channelRepository;

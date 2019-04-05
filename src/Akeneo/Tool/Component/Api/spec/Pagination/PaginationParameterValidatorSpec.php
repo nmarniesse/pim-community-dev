@@ -4,7 +4,7 @@ namespace spec\Akeneo\Tool\Component\Api\Pagination;
 
 use PhpSpec\ObjectBehavior;
 use Akeneo\Tool\Component\Api\Exception\PaginationParametersException;
-use Akeneo\Tool\Component\Api\Pagination\PaginationParameterValidator;
+use Akeneo\Tool\Component\Api\Pagination\PaginationParametersValidator;
 use Akeneo\Tool\Component\Api\Pagination\ParameterValidatorInterface;
 
 class PaginationParameterValidatorSpec extends ObjectBehavior
@@ -16,7 +16,7 @@ class PaginationParameterValidatorSpec extends ObjectBehavior
 
     function it_is_initializable()
     {
-        $this->shouldHaveType(PaginationParameterValidator::class);
+        $this->shouldHaveType(PaginationParametersValidator::class);
     }
 
     function it_is_a_parameter_validator()

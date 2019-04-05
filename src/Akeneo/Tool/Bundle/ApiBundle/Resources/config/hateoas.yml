@@ -4,7 +4,7 @@ parameters:
 
 services:
     pim_api.pagination.parameter_validator:
-        class: 'Akeneo\Tool\Component\Api\Pagination\PaginationParameterValidator'
+        class: 'Akeneo\Tool\Component\Api\Pagination\PaginationParametersValidator'
         arguments:
             - '%pim_api.configuration%'
 

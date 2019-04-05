@@ -5,7 +5,7 @@ namespace spec\Akeneo\Tool\Component\Api\Pagination;
 use Akeneo\Channel\Bundle\Doctrine\Repository\ChannelRepository;
 use Akeneo\Channel\Component\Model\Channel;
 use Akeneo\Tool\Bundle\ApiBundle\Checker\QueryParametersCheckerInterface;
-use Akeneo\Tool\Component\Api\Pagination\PaginationParameterValidator;
+use Akeneo\Tool\Component\Api\Pagination\PaginationParametersValidator;
 use Akeneo\Tool\Component\Api\Pagination\ProductParameterValidator;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
 use PhpSpec\ObjectBehavior;
@@ -17,7 +17,7 @@ class ProductParameterValidatorSpec extends ObjectBehavior
 {
     function let(
         IdentifiableObjectRepositoryInterface $channelRepository,
-        PaginationParameterValidator $paginationParameterValidator,
+        PaginationParametersValidator $paginationParameterValidator,
         QueryParametersCheckerInterface $queryParametersChecker
     ) {
         $this->beConstructedWith($channelRepository, $paginationParameterValidator, $queryParametersChecker);
@@ -54,7 +54,7 @@ class ProductParameterValidatorSpec extends ObjectBehavior
         $this->shouldNotThrow(UnprocessableEntityHttpException::class)->during('validate', [[]]);
     }
 
-    public function it_validates_pagination_parameters(PaginationParameterValidator $paginationParameterValidator)
+    public function it_validates_pagination_parameters(PaginationParametersValidator $paginationParameterValidator)
     {
         $paginationParameterValidator->validate([], [])->shouldBeCalledOnce();
         $this->validate([], []);

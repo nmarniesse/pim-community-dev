@@ -12,7 +12,7 @@ use Akeneo\Tool\Component\Api\Exception\PaginationParametersException;
  * @copyright 2017 Akeneo SAS (http://www.akeneo.com)
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
-class PaginationParameterValidator implements ParameterValidatorInterface
+class PaginationParametersValidator implements ParameterValidatorInterface
 {
     /** @var array */
     protected $configuration;
