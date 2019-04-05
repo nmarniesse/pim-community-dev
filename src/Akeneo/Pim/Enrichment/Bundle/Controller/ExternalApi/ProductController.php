@@ -6,9 +6,9 @@ namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
 
 use Akeneo\Pim\Enrichment\Component\Product\Builder\ProductBuilderInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Comparator\Filter\FilterInterface;
-use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
-use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler;
-use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ListProductsQuery;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ListProductsQueryHandler;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ListProductsQueryValidator;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\AddParent;
 use Akeneo\Pim\Enrichment\Component\Product\Model\ProductInterface;
 use Akeneo\Pim\Enrichment\Component\Product\ProductModel\Filter\AttributeFilterInterface;
@@ -123,10 +123,10 @@ class ProductController
     /** @var ProductParameterValidator */
     private $productParameterValidator;
 
-    /** @var GetListOfProductsQueryValidator */
+    /** @var ListProductsQueryValidator */
     private $getListOfProductsValidator;
 
-    /** @var GetListOfProductsQueryHandler */
+    /** @var ListProductsQueryHandler */
     private $getListOfProductsQueryHandler;
 
     public function __construct(
@@ -152,9 +152,9 @@ class ProductController
         ProductBuilderInterface $variantProductBuilder,
         AttributeFilterInterface $productAttributeFilter,
         AddParent $addParent,
-        GetListOfProductsQueryValidator $getListOfProductsQueryValidator,
+        ListProductsQueryValidator $getListOfProductsQueryValidator,
         array $apiConfiguration,
-        GetListOfProductsQueryHandler $getListOfProductsQueryHandler
+        ListProductsQueryHandler $getListOfProductsQueryHandler
     ) {
         $this->productParameterValidator = $productParameterValidator;
         $this->normalizer = $normalizer;
@@ -198,7 +198,7 @@ class ProductController
             throw new UnprocessableEntityHttpException($e->getMessage(), $e);
         }
 
-        $query = new GetListOfProductsQuery();
+        $query = new ListProductsQuery();
         if ($request->query->has('attributes')) {
             $query->attributes = explode(',', $request->query->get('attributes'));
         }
@@ -496,7 +496,7 @@ class ProductController
         return $response;
     }
 
-    protected function getNormalizerOptions(GetListOfProductsQuery $query): array
+    protected function getNormalizerOptions(ListProductsQuery $query): array
     {
         $normalizerOptions = [];
 
@@ -610,7 +610,7 @@ class ProductController
             isset($data['parent']) && '' !== $data['parent'];
     }
 
-    private function normalizeProductsList(CursorInterface $products, GetListOfProductsQuery $query)
+    private function normalizeProductsList(CursorInterface $products, ListProductsQuery $query)
     {
         $normalizerOptions = $this->getNormalizerOptions($query);
 

@@ -4,7 +4,7 @@ namespace Specification\Akeneo\Pim\Enrichment\Component\Product\Connector\UseCas
 
 use Akeneo\Channel\Component\Model\ChannelInterface;
 use Akeneo\Pim\Enrichment\Component\Category\Model\CategoryInterface;
-use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
+use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ListProductsQuery;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
@@ -23,12 +23,12 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior
     {
         $pqb->addFilter(Argument::cetera())->shouldNotBeCalled();
 
-        $this->apply($pqb, new GetListOfProductsQuery());
+        $this->apply($pqb, new ListProductsQuery());
     }
 
     function it_adds_search_filter(ProductQueryBuilderInterface $pqb)
     {
-        $query = new GetListOfProductsQuery();
+        $query = new ListProductsQuery();
         $query->search = [
             'propertyCode' => [
                 [
@@ -51,7 +51,7 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior
         ChannelInterface $channel,
         CategoryInterface $category
     ) {
-        $query = new GetListOfProductsQuery();
+        $query = new ListProductsQuery();
         $query->searchLocale = 'en_US';
         $query->searchScope = 'ecommerce';
         $query->channel = 'ecommerce';
@@ -72,7 +72,7 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior
 
     function it_adds_search_filter_specifying_scope_and_locale(ProductQueryBuilderInterface $pqb)
     {
-        $query = new GetListOfProductsQuery();
+        $query = new ListProductsQuery();
         $query->search = [
             'propertyCode' => [
                 [
@@ -92,7 +92,7 @@ class ApplyProductSearchQueryParametersToPQBSpec extends ObjectBehavior
 
     function it_adds_search_filter_for_datetimes(ProductQueryBuilderInterface $pqb)
     {
-        $query = new GetListOfProductsQuery();
+        $query = new ListProductsQuery();
         $query->search = [
             'created' => [
                 [

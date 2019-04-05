@@ -54,9 +54,9 @@ services:
             - '@pim_catalog.builder.product'
             - '@pim_api.filter.product_attribute_filter'
             - '@pim_catalog.entity_with_family_variant.add_parent_to_product'
-            - '@pim_enrich.connector.use_cases.validator.get_list_of_products'
+            - '@pim_enrich.connector.use_cases.validator.list_products'
             - '%pim_api.configuration%'
-            - '@pim_enrich.connector.use_cases.handler.get_list_of_products'
+            - '@pim_enrich.connector.use_cases.handler.list_products'
 
     # TODO rename this service
     akeneo.pim.enrichment.controller.external_api.apply_product_search_query_parameters_to_pqb:

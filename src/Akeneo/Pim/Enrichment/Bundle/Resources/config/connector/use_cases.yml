@@ -1,17 +1,15 @@
-#TODO: move/rename this file
 services:
-    pim_enrich.connector.use_cases.validator.get_list_of_products:
-        class: Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator
+    pim_enrich.connector.use_cases.validator.list_products:
+        class: Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ListProductsQueryValidator
         arguments:
             - '@pim_catalog.repository.cached_category'
             - '@pim_catalog.repository.cached_locale'
             - '@pim_catalog.repository.cached_attribute'
 
-    pim_enrich.connector.use_cases.handler.get_list_of_products:
-        class: Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler
+    pim_enrich.connector.use_cases.handler.list_products:
+        class: Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ListProductsQueryHandler
         arguments:
             - '@akeneo.pim.enrichment.controller.external_api.apply_product_search_query_parameters_to_pqb'
             - '@pim_catalog.query.product_query_builder_from_size_factory'
             - '@pim_catalog.query.product_query_builder_search_after_size_factory'
             - '@pim_api.security.primary_key_encrypter'
-

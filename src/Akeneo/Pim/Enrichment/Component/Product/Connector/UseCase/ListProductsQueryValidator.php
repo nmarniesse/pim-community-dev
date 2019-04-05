@@ -9,11 +9,11 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
- * TODO Move ?
- *
+ * @copyright 2019 Akeneo SAS (http://www.akeneo.com)
+ * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  * @author Pierre Allard <pierre.allard@akeneo.com>
  */
-class GetListOfProductsQueryValidator
+final class ListProductsQueryValidator
 {
     private static $productFields = [
         'family',
@@ -51,12 +51,12 @@ class GetListOfProductsQueryValidator
     }
 
     /**
-     * @param GetListOfProductsQuery $query
+     * @param ListProductsQuery $query
      *
      * @throws BadRequestHttpException
      * @throws UnprocessableEntityHttpException
      */
-    public function validate(GetListOfProductsQuery $query)
+    public function validate(ListProductsQuery $query)
     {
         $this->validateCriterionParameters($query);
         $this->validateCategoriesParameters($query);
@@ -65,12 +65,12 @@ class GetListOfProductsQueryValidator
     }
 
     /**
-     * @param GetListOfProductsQuery $query
+     * @param ListProductsQuery $query
      *
      * @throws BadRequestHttpException
      * @throws UnprocessableEntityHttpException
      */
-    private function validateCriterionParameters(GetListOfProductsQuery $query): void
+    private function validateCriterionParameters(ListProductsQuery $query): void
     {
         if (null === $query->search) {
             throw new BadRequestHttpException('Search query parameter should be valid JSON.');
@@ -110,11 +110,11 @@ class GetListOfProductsQueryValidator
     }
 
     /**
-     * @param GetListOfProductsQuery $query
+     * @param ListProductsQuery $query
      *
      * @throws UnprocessableEntityHttpException
      */
-    private function validateCategoriesParameters(GetListOfProductsQuery $query): void
+    private function validateCategoriesParameters(ListProductsQuery $query): void
     {
         if (!isset($query->search['categories'])) {
             return;
@@ -144,11 +144,11 @@ class GetListOfProductsQueryValidator
     }
 
     /**
-     * @param GetListOfProductsQuery $query
+     * @param ListProductsQuery $query
      *
      * @throws UnprocessableEntityHttpException
      */
-    private function validateLocalesParameters(GetListOfProductsQuery $query): void
+    private function validateLocalesParameters(ListProductsQuery $query): void
     {
         $localeCodes = [];
         foreach ($query->search as $propertyCode => $filters) {
@@ -192,11 +192,11 @@ class GetListOfProductsQueryValidator
      * TODO: the support of the operator is not validated in this method (we only check the property)
      *       We should change the exception message or update this method's behaviour
      *
-     * @param GetListOfProductsQuery $query
+     * @param ListProductsQuery $query
      *
      * @throws UnprocessableEntityHttpException
      */
-    public function validatePropertyParameters(GetListOfProductsQuery $query): void
+    public function validatePropertyParameters(ListProductsQuery $query): void
     {
         foreach ($query->search as $propertyCode => $filters) {
             foreach ($filters as $filter) {

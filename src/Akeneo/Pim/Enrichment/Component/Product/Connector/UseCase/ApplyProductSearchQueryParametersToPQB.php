@@ -29,13 +29,13 @@ final class ApplyProductSearchQueryParametersToPQB
      * If a scope is requested, add a filter to return only products linked to its category tree
      *
      * @param ProductQueryBuilderInterface $pqb
-     * @param GetListOfProductsQuery $query
+     * @param ListProductsQuery $query
      *
      * @throws UnprocessableEntityHttpException
      */
     public function apply(
         ProductQueryBuilderInterface $pqb,
-        GetListOfProductsQuery $query
+        ListProductsQuery $query
     ): void {
         $searchParameters = $query->search;
 
