@@ -9,6 +9,8 @@ use Symfony\Component\HttpKernel\Exception\BadRequestHttpException;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
+ * TODO: remove http exception as it's busisness stuff
+ *
  * @copyright 2019 Akeneo SAS (http://www.akeneo.com)
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  * @author Pierre Allard <pierre.allard@akeneo.com>

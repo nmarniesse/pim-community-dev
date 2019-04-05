@@ -8,7 +8,7 @@ use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
  * TODO: to move it enrichment
- * TODO: remove http exception as it's busisness stuff
+ *
  * @copyright 2017 Akeneo SAS (http://www.akeneo.com)
  * @license   http://opensource.org/licenses/osl-3.0.php  Open Software License (OSL 3.0)
  */
@@ -40,7 +40,15 @@ class ProductParameterValidator implements ParameterValidatorInterface
     {
         $this->paginationParametersValidator->validate($parameters, $options);
 
-        $channel = null;
+        $this->validateChannel($parameters);
+
+        $this->validateLocales($parameters);
+
+        $this->validateAttributes($parameters);
+    }
+
+    private function validateChannel(array $parameters): void
+    {
         if (isset($parameters['scope'])) {
             $channel = $this->channelRepository->findOneByIdentifier($parameters['scope']);
             if (null === $channel) {
@@ -49,12 +57,20 @@ class ProductParameterValidator implements ParameterValidatorInterface
                 );
             }
         }
+    }
 
+    private function validateLocales(array $parameters): void
+    {
+        $channelCode = $parameters['scope'] ?? null;
+        $channel = $this->channelRepository->findOneByIdentifier($channelCode);
         if (isset($parameters['locales'])) {
             $locales = explode(',', $parameters['locales']);
             $this->queryParametersChecker->checkLocalesParameters($locales, $channel);
         }
+    }
 
+    private function validateAttributes(array $parameters): void
+    {
         if (isset($parameters['attributes'])) {
             $attributes = explode(',', $parameters['attributes']);
             $this->queryParametersChecker->checkAttributesParameters($attributes);
