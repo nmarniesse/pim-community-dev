@@ -665,9 +665,7 @@ class ProductController
             }
 
             return $paginatedProducts;
-        }
-
-        else {
+        } else {
             $products = iterator_to_array($products);
 
             $lastProduct = end($products);

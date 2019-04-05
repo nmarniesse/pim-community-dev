@@ -58,8 +58,9 @@ services:
             - '%pim_api.configuration%'
             - '@pim_enrich.connector.use_cases.handler.get_list_of_products'
 
+    # TODO rename this service
     akeneo.pim.enrichment.controller.external_api.apply_product_search_query_parameters_to_pqb:
-        class: 'Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ApplyProductSearchQueryParametersToPQB'
+        class: 'Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\ApplyProductSearchQueryParametersToPQB'
         arguments:
             - '@pim_catalog.repository.cached_channel'
 

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase;
 
-use Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi\ApplyProductSearchQueryParametersToPQB;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\InvalidOperatorException;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\ObjectNotFoundException;
 use Akeneo\Pim\Enrichment\Component\Product\Exception\UnsupportedFilterException;
@@ -73,7 +72,8 @@ final class GetListOfProductsQueryHandler
         return $pqb->execute();
     }
 
-    private function getSearchPQB(GetListOfProductsQuery $query) {
+    private function getSearchPQB(GetListOfProductsQuery $query)
+    {
         if (PaginationTypes::OFFSET === $query->paginationType) {
             return $this->fromSizePqbFactory->create([
                 'limit' => (int) $query->limit,

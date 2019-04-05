@@ -2,13 +2,11 @@
 
 declare(strict_types=1);
 
-namespace Akeneo\Pim\Enrichment\Bundle\Controller\ExternalApi;
+namespace Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase;
 
-use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQuery;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderInterface;
 use Akeneo\Tool\Component\StorageUtils\Repository\IdentifiableObjectRepositoryInterface;
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Exception\UnprocessableEntityHttpException;
 
 /**
@@ -31,7 +29,7 @@ final class ApplyProductSearchQueryParametersToPQB
      * If a scope is requested, add a filter to return only products linked to its category tree
      *
      * @param ProductQueryBuilderInterface $pqb
-     * @param Request                      $request
+     * @param GetListOfProductsQuery $query
      *
      * @throws UnprocessableEntityHttpException
      */
