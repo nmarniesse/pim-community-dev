@@ -76,7 +76,13 @@ class ValueCollectionFactory implements ValueCollectionFactoryInterface
                         }
 
                         try {
-                            $values[] = $this->valueFactory->create($attribute, $channelCode, $localeCode, $data, true);
+                            $value = $this->valueFactory->create($attribute, $channelCode, $localeCode, $data, true);
+                            $productData = $value->getData();
+                            $isEmpty = ($productData === null || (is_string($productData) && trim($productData) === '') || empty($productData) || (is_array($productData) && count($productData) === 0));
+
+                            if (!$isEmpty) {
+                                $values[] = $value;
+                            }
                         } catch (InvalidOptionException $e) {
                             $this->logger->warning(
                                 sprintf(
