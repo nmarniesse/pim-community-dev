@@ -224,7 +224,9 @@ class ProductController
         $query->limit = $request->query->get('limit', $this->apiConfiguration['pagination']['limit_by_default']);
         $query->paginationType = $request->query->get('pagination_type', PaginationTypes::OFFSET);
         $query->searchLocale = $request->query->get('search_locale', null);
-        $query->withCount = $request->query->get('with_count', false);
+        if ($request->query->has('with_count') && $request->query->get('with_count') === 'true') {
+            $query->withCount = true;
+        }
         $query->page = $request->query->get('page', 1);
         $query->searchScope = $request->query->get('search_scope', null);
         $query->searchAfter = $request->query->get('search_after', null);
@@ -234,9 +236,9 @@ class ProductController
         //$handler = new GetListOfProductsQueryHandler();
         //$products = $handler->handle($query);
 
-        $products = $this->getTemporaryProducts($query);
+        $products = $this->search($query);
 
-        return new JsonResponse($this->normalizeTemporaryProducts($request, $products));
+        return new JsonResponse($this->normalizeTemporaryProducts($products, $query));
     }
 
     /**
@@ -506,23 +508,23 @@ class ProductController
         return $response;
     }
 
-    protected function getNormalizerOptions(Request $request): array
+    protected function getNormalizerOptions(GetListOfProductsQuery $query): array
     {
         $normalizerOptions = [];
 
-        if ($request->query->has('scope')) {
-            $channel = $this->channelRepository->findOneByIdentifier($request->query->get('scope', null));
+        if (null !== $query->channel) {
+            $channel = $this->channelRepository->findOneByIdentifier($query->channel);
 
             $normalizerOptions['channels'] = [$channel->getCode()];
             $normalizerOptions['locales'] = $channel->getLocaleCodes();
         }
 
-        if ($request->query->has('locales')) {
-            $normalizerOptions['locales'] = explode(',', $request->query->get('locales'));
+        if (null !== $query->locales) {
+            $normalizerOptions['locales'] = $query->locales;
         }
 
-        if ($request->query->has('attributes')) {
-            $normalizerOptions['attributes'] = explode(',', $request->query->get('attributes'));
+        if (null !== $query->attributes) {
+            $normalizerOptions['attributes'] = $query->attributes;
         }
 
         return $normalizerOptions;
@@ -576,38 +578,8 @@ class ProductController
         }
     }
 
-    protected function searchAfterOffset(GetListOfProductsQuery $query): CursorInterface {
-        $pqb = $this->fromSizePqbFactory->create([
-            'limit' => (int) $query->limit,
-            'from' => ($query->page - 1) * $query->limit
-        ]);
-
-        try {
-            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $query);
-        } catch (
-            UnsupportedFilterException
-            | PropertyException
-            | InvalidOperatorException
-            | ObjectNotFoundException
-            $e
-        ) {
-            throw new UnprocessableEntityHttpException($e->getMessage(), $e);
-        }
-
-        $pqb->addSorter('id', Directions::ASCENDING);
-
-        return $pqb->execute();
-    }
-
-    protected function searchAfterIdentifier(GetListOfProductsQuery $query): CursorInterface {
-        $pqbOptions = ['limit' => (int) $query->limit];
-
-        if (null !== $query->searchAfter) {
-            $searchParameterDecrypted = $this->primaryKeyEncrypter->decrypt($query->searchAfter);
-            $pqbOptions['search_after_unique_key'] = $searchParameterDecrypted;
-            $pqbOptions['search_after'] = [$searchParameterDecrypted];
-        }
-        $pqb = $this->searchAfterPqbFactory->create($pqbOptions);
+    protected function search(GetListOfProductsQuery $query): CursorInterface {
+        $pqb = $this->getSearchPQB($query);
 
         try {
             $this->applyProductSearchQueryParametersToPQB->apply($pqb, $query);
@@ -624,6 +596,24 @@ class ProductController
         $pqb->addSorter('id', Directions::ASCENDING);
 
         return $pqb->execute();
+    }
+
+    private function getSearchPQB(GetListOfProductsQuery $query) {
+        if (PaginationTypes::OFFSET === $query->paginationType) {
+            return $this->fromSizePqbFactory->create([
+                'limit' => (int) $query->limit,
+                'from' => ($query->page - 1) * $query->limit
+            ]);
+        }
+        $pqbOptions = ['limit' => (int) $query->limit];
+
+        if (null !== $query->searchAfter) {
+            $searchParameterDecrypted = $this->primaryKeyEncrypter->decrypt($query->searchAfter);
+            $pqbOptions['search_after_unique_key'] = $searchParameterDecrypted;
+            $pqbOptions['search_after'] = [$searchParameterDecrypted];
+        }
+
+        return $this->searchAfterPqbFactory->create($pqbOptions);
     }
 
     /**
@@ -670,26 +660,31 @@ class ProductController
             isset($data['parent']) && '' !== $data['parent'];
     }
 
-    private function getTemporaryProducts(GetListOfProductsQuery $query)
+    private function normalizeTemporaryProducts(CursorInterface $products, GetListOfProductsQuery $query)
     {
-        return PaginationTypes::OFFSET === $query->paginationType ?
-            $this->searchAfterOffset($query) :
-            $this->searchAfterIdentifier($query);
-    }
+        $normalizerOptions = $this->getNormalizerOptions($query);
 
-    private function normalizeTemporaryProducts(Request $request, CursorInterface $products)
-    {
-        $normalizerOptions = $this->getNormalizerOptions($request);
-        $defaultParameters = [
-            'pagination_type' => PaginationTypes::OFFSET,
-            'limit'           => $this->apiConfiguration['pagination']['limit_by_default'],
+        $queryParameters = [
+            'with_count' => $query->withCount ? 'true' : 'false',
+            'pagination_type' => $query->paginationType,
+            'limit' => $query->limit
         ];
 
-        $queryParameters = array_merge($defaultParameters, $request->query->all());
+        if ($query->search !== []) {
+            $queryParameters['search'] = json_encode($query->search);
+        }
+        if (null !== $query->channel) {
+            $queryParameters['scope'] = $query->channel;
+        }
+        if (null !== $query->locales) {
+            $queryParameters['locales'] = join(',', $query->locales);
+        }
+        if (null !== $query->attributes) {
+            $queryParameters['attributes'] = join(',', $query->attributes);
+        }
 
-        if (PaginationTypes::OFFSET === $queryParameters['pagination_type']) {
-
-            $queryParameters = array_merge(['page' => 1, 'with_count' => 'false'], $queryParameters);
+        if (PaginationTypes::OFFSET === $query->paginationType) {
+            $queryParameters = ['page' => $query->page] + $queryParameters;
 
             $paginationParameters = [
                 'query_parameters'    => $queryParameters,
@@ -699,7 +694,7 @@ class ProductController
             ];
 
             try {
-                $count = 'true' === $queryParameters['with_count'] ? $products->count() : null;
+                $count = $query->withCount ? $products->count() : null;
                 $paginatedProducts = $this->offsetPaginator->paginate(
                     $this->normalizer->normalize($products, 'external_api', $normalizerOptions),
                     $paginationParameters,
@@ -725,18 +720,13 @@ class ProductController
         else {
             $products = iterator_to_array($products);
 
-            $searchParameterCrypted = null;
-            if (isset($queryParameters['search_after'])) {
-                $searchParameterCrypted = $queryParameters['search_after'];
-            }
-
             $lastProduct = end($products);
 
             $parameters = [
                 'query_parameters'    => $queryParameters,
                 'search_after'        => [
                     'next' => false !== $lastProduct ? $this->primaryKeyEncrypter->encrypt($lastProduct->getId()) : null,
-                    'self' => $searchParameterCrypted,
+                    'self' => $query->searchAfter,
                 ],
                 'list_route_name'     => 'pim_api_product_list',
                 'item_route_name'     => 'pim_api_product_get',

@@ -33,7 +33,7 @@ final class GetListOfProductsQuery
     public $paginationType;
 
     /** @var int */
-    public $page;
+    public $page = 1;
 
     /** @var string */
     public $searchAfter;
@@ -42,7 +42,7 @@ final class GetListOfProductsQuery
     public $limit;
 
     /** @var bool */
-    public $withCount;
+    public $withCount = false;
 
     /** @var int */
     public $userId;
