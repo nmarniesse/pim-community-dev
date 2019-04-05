@@ -10,14 +10,10 @@ use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQ
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryHandler;
 use Akeneo\Pim\Enrichment\Component\Product\Connector\UseCase\GetListOfProductsQueryValidator;
 use Akeneo\Pim\Enrichment\Component\Product\EntityWithFamilyVariant\AddParent;
-use Akeneo\Pim\Enrichment\Component\Product\Exception\InvalidOperatorException;
-use Akeneo\Pim\Enrichment\Component\Product\Exception\ObjectNotFoundException;
-use Akeneo\Pim\Enrichment\Component\Product\Exception\UnsupportedFilterException;
 use Akeneo\Pim\Enrichment\Component\Product\Model\ProductInterface;
 use Akeneo\Pim\Enrichment\Component\Product\ProductModel\Filter\AttributeFilterInterface;
 use Akeneo\Pim\Enrichment\Component\Product\Query\Filter\Operators;
 use Akeneo\Pim\Enrichment\Component\Product\Query\ProductQueryBuilderFactoryInterface;
-use Akeneo\Pim\Enrichment\Component\Product\Query\Sorter\Directions;
 use Akeneo\Pim\Structure\Component\Repository\ExternalApi\AttributeRepositoryInterface;
 use Akeneo\Tool\Bundle\ApiBundle\Checker\QueryParametersCheckerInterface;
 use Akeneo\Tool\Bundle\ApiBundle\Documentation;
@@ -58,9 +54,6 @@ use Symfony\Component\Validator\Validator\ValidatorInterface;
  */
 class ProductController
 {
-    /** @var ProductQueryBuilderFactoryInterface */
-    protected $searchAfterPqbFactory;
-
     /** @var NormalizerInterface */
     protected $normalizer;
 
@@ -115,9 +108,6 @@ class ProductController
     /** @var QueryParametersCheckerInterface */
     protected $queryParametersChecker;
 
-    /** @var ApplyProductSearchQueryParametersToPQB */
-    protected $applyProductSearchQueryParametersToPQB;
-
     /** @var ProductQueryBuilderFactoryInterface */
     protected $fromSizePqbFactory;
 
@@ -136,12 +126,13 @@ class ProductController
     /** @var GetListOfProductsQueryValidator */
     private $getListOfProductsValidator;
 
+    /** @var GetListOfProductsQueryHandler */
+    private $getListOfProductsQueryHandler;
+
     public function __construct(
         ProductParameterValidator $productParameterValidator,
-        ProductQueryBuilderFactoryInterface $searchAfterPqbFactory,
         NormalizerInterface $normalizer,
         IdentifiableObjectRepositoryInterface $channelRepository,
-        ApplyProductSearchQueryParametersToPQB $applyProductSearchQueryParametersToPQB,
         QueryParametersCheckerInterface $queryParametersChecker,
         AttributeRepositoryInterface $attributeRepository,
         IdentifiableObjectRepositoryInterface $productRepository,
@@ -162,13 +153,12 @@ class ProductController
         AttributeFilterInterface $productAttributeFilter,
         AddParent $addParent,
         GetListOfProductsQueryValidator $getListOfProductsQueryValidator,
-        array $apiConfiguration
+        array $apiConfiguration,
+        GetListOfProductsQueryHandler $getListOfProductsQueryHandler
     ) {
         $this->productParameterValidator = $productParameterValidator;
-        $this->searchAfterPqbFactory = $searchAfterPqbFactory;
         $this->normalizer = $normalizer;
         $this->channelRepository = $channelRepository;
-        $this->applyProductSearchQueryParametersToPQB = $applyProductSearchQueryParametersToPQB;
         $this->queryParametersChecker = $queryParametersChecker;
         $this->attributeRepository = $attributeRepository;
         $this->productRepository = $productRepository;
@@ -190,6 +180,7 @@ class ProductController
         $this->productAttributeFilter = $productAttributeFilter;
         $this->addParent = $addParent;
         $this->getListOfProductsValidator = $getListOfProductsQueryValidator;
+        $this->getListOfProductsQueryHandler = $getListOfProductsQueryHandler;
     }
 
     /**
@@ -233,12 +224,9 @@ class ProductController
 
         $this->getListOfProductsValidator->validate($query);
 
-        //$handler = new GetListOfProductsQueryHandler();
-        //$products = $handler->handle($query);
+        $products = $this->getListOfProductsQueryHandler->handle($query);
 
-        $products = $this->search($query);
-
-        return new JsonResponse($this->normalizeTemporaryProducts($products, $query));
+        return new JsonResponse($this->normalizeProductsList($products, $query));
     }
 
     /**
@@ -578,44 +566,6 @@ class ProductController
         }
     }
 
-    protected function search(GetListOfProductsQuery $query): CursorInterface {
-        $pqb = $this->getSearchPQB($query);
-
-        try {
-            $this->applyProductSearchQueryParametersToPQB->apply($pqb, $query);
-        } catch (
-        UnsupportedFilterException
-        | PropertyException
-        | InvalidOperatorException
-        | ObjectNotFoundException
-        $e
-        ) {
-            throw new UnprocessableEntityHttpException($e->getMessage(), $e);
-        }
-
-        $pqb->addSorter('id', Directions::ASCENDING);
-
-        return $pqb->execute();
-    }
-
-    private function getSearchPQB(GetListOfProductsQuery $query) {
-        if (PaginationTypes::OFFSET === $query->paginationType) {
-            return $this->fromSizePqbFactory->create([
-                'limit' => (int) $query->limit,
-                'from' => ($query->page - 1) * $query->limit
-            ]);
-        }
-        $pqbOptions = ['limit' => (int) $query->limit];
-
-        if (null !== $query->searchAfter) {
-            $searchParameterDecrypted = $this->primaryKeyEncrypter->decrypt($query->searchAfter);
-            $pqbOptions['search_after_unique_key'] = $searchParameterDecrypted;
-            $pqbOptions['search_after'] = [$searchParameterDecrypted];
-        }
-
-        return $this->searchAfterPqbFactory->create($pqbOptions);
-    }
-
     /**
      * This method order the data by setting the parent field first. It comes from the ParentFieldSetter that sets the
      * family from the parent if the product family is null. By doing this the validator does not fail if the family
@@ -660,7 +610,7 @@ class ProductController
             isset($data['parent']) && '' !== $data['parent'];
     }
 
-    private function normalizeTemporaryProducts(CursorInterface $products, GetListOfProductsQuery $query)
+    private function normalizeProductsList(CursorInterface $products, GetListOfProductsQuery $query)
     {
         $normalizerOptions = $this->getNormalizerOptions($query);
 
